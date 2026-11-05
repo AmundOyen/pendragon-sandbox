@@ -49,29 +49,48 @@
     }
   </svg>
 
-  <!-- Hour and holy-day labels -->
+  <!-- Hour and holy-day labels: click to move the matching arm there -->
   @for (h of hourLabels; track h.hour) {
-    <span
-      class="text-muted-foreground pointer-events-none absolute hidden text-xs whitespace-nowrap italic sm:inline"
+    <button
+      type="button"
+      class="text-muted-foreground hover:text-secondary focus-visible:text-secondary focus-visible:ring-ring absolute hidden rounded-sm px-0.5 text-xs whitespace-nowrap italic transition-colors outline-none focus-visible:ring-2 sm:inline"
       [style.left.%]="h.left"
       [style.top.%]="h.top"
       [style.transform]="h.transform"
-      aria-hidden="true"
-      >{{ h.label }}</span
+      [attr.aria-label]="'Set Hour to ' + h.label"
+      (click)="setHour(h.hour)"
     >
+      {{ h.label }}
+    </button>
   }
   @for (h of holyLabels; track h.id) {
     <span
-      class="pointer-events-none absolute flex w-20 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center leading-tight sm:w-28"
+      class="absolute flex w-20 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center leading-tight sm:w-28"
       [style.left.%]="h.left"
       [style.top.%]="h.top"
-      aria-hidden="true"
     >
-      <span class="font-display text-xs font-semibold tracking-wide uppercase sm:text-sm">{{
-        h.name
-      }}</span>
-      <span class="text-muted-foreground text-[0.625rem] italic sm:text-xs">({{ h.date }})</span>
-      <span class="text-[0.625rem] italic sm:text-xs">{{ h.hourLabel }}</span>
+      <button
+        type="button"
+        class="hover:text-primary focus-visible:text-primary focus-visible:ring-ring group flex flex-col items-center rounded-sm px-1 transition-colors outline-none focus-visible:ring-2"
+        [attr.aria-label]="'Set Day to ' + h.name + ', ' + h.date"
+        (click)="setDay(h.angle)"
+      >
+        <span class="font-display text-xs font-semibold tracking-wide uppercase sm:text-sm">{{
+          h.name
+        }}</span>
+        <span
+          class="text-muted-foreground group-hover:text-primary group-focus-visible:text-primary text-[0.625rem] italic transition-colors sm:text-xs"
+          >({{ h.date }})</span
+        >
+      </button>
+      <button
+        type="button"
+        class="hover:text-secondary focus-visible:text-secondary focus-visible:ring-ring rounded-sm px-1 text-[0.625rem] italic transition-colors outline-none focus-visible:ring-2 sm:text-xs"
+        [attr.aria-label]="'Set Hour to ' + h.hourLabel"
+        (click)="setHour(h.hour)"
+      >
+        {{ h.hourLabel }}
+      </button>
     </span>
   }
 

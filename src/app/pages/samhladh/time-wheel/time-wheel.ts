@@ -305,6 +305,14 @@ export class TimeWheel {
     this.setAngle(arm, mod(next, 360));
   }
 
+  protected setDay(angle: number): void {
+    this.dayAngle.set(angle);
+  }
+
+  protected setHour(hour: number): void {
+    this.hourAngle.set(hourToAngle(hour));
+  }
+
   protected select(id: string): void {
     this.selectedId.set(this.selectedId() === id ? null : id);
   }
