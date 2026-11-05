@@ -12,7 +12,9 @@ import { AppSidebar } from './layout/app-sidebar/app-sidebar';
     <div hlmSidebarWrapper>
       <app-sidebar />
       <main hlmSidebarInset>
-        <header class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+        <header
+          class="bg-background sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b px-4"
+        >
           <button hlmSidebarTrigger class="-ms-1"></button>
           <hlm-separator
             orientation="vertical"
