@@ -225,25 +225,3 @@
     </div>
   }
 </div>
-
-@if (unplaced().length) {
-  <p class="text-muted-foreground mt-6 text-center text-sm">
-    Day not legible in the source:
-    @for (s of unplaced(); track s.id) {
-      @let active = selectedId() === s.id;
-      <button
-        type="button"
-        class="focus-visible:ring-ring ms-1 rounded-sm px-1 py-0.5 outline-none focus-visible:ring-2"
-        [class]="
-          active
-            ? 'bg-primary text-primary-foreground font-semibold'
-            : 'text-foreground hover:bg-accent hover:text-accent-foreground underline'
-        "
-        [attr.aria-pressed]="active"
-        (click)="select(s.id)"
-      >
-        {{ s.name }}
-      </button>
-    }
-  </p>
-}

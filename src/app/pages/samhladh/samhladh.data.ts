@@ -1,6 +1,5 @@
 /**
  * Samhladh (clan animal spirit) data from Beyond the Wall, Samhladh listing (pp. 40–46).
- * Entries flagged `ocr` come from scanned pages where two columns ran together.
  */
 
 export type HolyDayId =
@@ -75,12 +74,10 @@ export interface Samhladh {
   description: string;
   geasa: string[];
   trait: string;
-  /** Null when the Day is not legible in the source. */
-  day: HolyDayId | null;
+  day: HolyDayId;
   bonus: string;
   /** The bonus is the standard aid applied to the named skills or stats. */
   standard?: boolean;
-  ocr?: boolean;
 }
 
 export const SAMHLADHS: readonly Samhladh[] = [
@@ -147,7 +144,6 @@ export const SAMHLADHS: readonly Samhladh[] = [
     trait: 'Lustful',
     day: 'summer-solstice',
     bonus: 'STR or CON (standard), or Fertility: +5 on the Childbirth table',
-    ocr: true,
   },
   {
     id: 'crow',
@@ -167,10 +163,9 @@ export const SAMHLADHS: readonly Samhladh[] = [
       'Lives in a comfortable Otherworld house, fed the choicest meats by giants. Dog clans are known for honesty and deep friendship once a pact is made.',
     geasa: ['Never abuse a friendship', 'Never betray your family'],
     trait: 'Loyalty (Lord/Clan)',
-    day: null,
+    day: 'spring-equinox',
     bonus: 'Hunting or Awareness',
     standard: true,
-    ocr: true,
   },
   {
     id: 'golden-eagle',
@@ -204,7 +199,6 @@ export const SAMHLADHS: readonly Samhladh[] = [
     day: 'spring-equinox',
     bonus: 'Movement Rate, DEX or Awareness',
     standard: true,
-    ocr: true,
   },
   {
     id: 'hawk',
@@ -242,7 +236,6 @@ export const SAMHLADHS: readonly Samhladh[] = [
     day: 'autumn-equinox',
     bonus: 'Movement Rate, DEX or STR',
     standard: true,
-    ocr: true,
   },
   {
     id: 'otter',
@@ -254,7 +247,6 @@ export const SAMHLADHS: readonly Samhladh[] = [
     day: 'autumn-equinox',
     bonus: 'Chaste, Swimming or Hunting (Hiding)',
     standard: true,
-    ocr: true,
   },
   {
     id: 'ram',
@@ -279,7 +271,6 @@ export const SAMHLADHS: readonly Samhladh[] = [
     day: 'winter-solstice',
     bonus: 'Intrigue or Awareness',
     standard: true,
-    ocr: true,
   },
   {
     id: 'reindeer',
@@ -303,7 +294,6 @@ export const SAMHLADHS: readonly Samhladh[] = [
     trait: 'Energetic',
     day: 'winter-solstice',
     bonus: '+5 Swimming, or Longevity: roll 3d6 on the Aging Table and keep any two',
-    ocr: true,
   },
   {
     id: 'seal',

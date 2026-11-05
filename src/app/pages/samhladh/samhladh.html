@@ -104,11 +104,6 @@
                   </p>
                 }
               </div>
-            } @else {
-              <p class="text-muted-foreground text-sm">
-                This spirit's Day is not legible in the source, so no timing modifiers can be worked
-                out. Check the printed page.
-              </p>
             }
 
             <fieldset class="flex flex-col gap-2">
@@ -147,11 +142,6 @@
                 Critical: the benefit lasts 1 hour. Fumble: the tattoo fades until you win the
                 spirit back in the Otherworld. One invocation roll per day.
               </p>
-              @if (s.ocr) {
-                <p class="text-muted-foreground italic">
-                  The source scan merges two columns here; check the printed page.
-                </p>
-              }
             </div>
 
             <div class="flex flex-col gap-2 text-sm">
@@ -176,8 +166,9 @@
       }
 
       <p class="text-muted-foreground text-xs">
-        Modifiers are cumulative: best +8, worst −23. The Hour counts within 30 minutes; the Quarter
-        is 3 hours either side of it. The Season is taken as 45 days either side of the Day.
+        Modifiers are cumulative: best +8, worst −23. The Hour counts within 30 minutes of it and
+        the Quarter is the six hours around it (Midnight: 9 PM to 3 AM). The Season runs between the
+        two holy days either side of the Day (Winter Solstice: Samhain to Imbolc).
       </p>
     </div>
   </div>

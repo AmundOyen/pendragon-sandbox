@@ -10,7 +10,7 @@ import { SAMHLADHS } from './samhladh.data';
 
 const spirit = (id: string) => SAMHLADHS.find((s) => s.id === id)!;
 const total = (id: string, month: number, day: number, hour: number) =>
-  invocationTiming(spirit(id), dayOfYear(month, day), hour)!.total;
+  invocationTiming(spirit(id), dayOfYear(month, day), hour).total;
 
 describe('wheel mapping', () => {
   it('puts holy days on their spokes', () => {
@@ -56,7 +56,15 @@ describe('invocationTiming', () => {
     expect(total('wolf', 1, 15, 1)).toBe(2);
   });
 
-  it('returns null for a spirit with no known Day', () => {
-    expect(invocationTiming(spirit('dog'), 0, 0)).toBeNull();
+  it('runs the Season between the two neighbouring holy days', () => {
+    // Winter Solstice's Season is Samhain (Nov 1) to Imbolc (Feb 1), not ±45 days.
+    expect(total('wolf', 11, 1, 6)).toBe(1);
+    expect(total('wolf', 2, 1, 6)).toBe(1);
+    expect(total('wolf', 2, 3, 6)).toBe(0);
+    expect(total('wolf', 10, 30, 6)).toBe(0);
+  });
+
+  it('gives Dog its Spring Equinox day', () => {
+    expect(total('dog', 3, 21, 6)).toBe(8);
   });
 });

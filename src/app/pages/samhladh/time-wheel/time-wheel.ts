@@ -11,7 +11,6 @@ import {
 import {
   angleToDay,
   angleToHour,
-  dayOfYear,
   dayToAngle,
   formatDayOfYear,
   formatHour,
@@ -19,7 +18,7 @@ import {
   hourToAngle,
   mod,
   QUARTER_HALF_WIDTH_HOURS,
-  SEASON_HALF_WIDTH_DAYS,
+  SEASON_HALF_WIDTH_DEGREES,
 } from '../samhladh-timing';
 import { HOLY_DAYS, holyDay, type Samhladh } from '../samhladh.data';
 
@@ -67,6 +66,7 @@ const LABEL_LAYOUT: Record<string, [number, number, 'l' | 'r' | 'c']> = {
   // Imbolc
   blackbird: [0.56, -0.66, 'c'],
   // Spring Equinox: above and below the East spoke
+  dog: [0.8, -0.19, 'c'],
   ram: [0.78, -0.08, 'c'],
   hare: [0.78, 0.08, 'c'],
   // Beltaine
@@ -182,7 +182,7 @@ export class TimeWheel {
   protected readonly spiritLabels = computed(() =>
     this.spirits().flatMap((spirit) => {
       const spot = LABEL_LAYOUT[spirit.id];
-      if (!spirit.day || !spot) return [];
+      if (!spot) return [];
       const [x, y, anchor] = spot;
       const tx = anchor === 'l' ? '0%' : anchor === 'r' ? '-100%' : '-50%';
       return [
@@ -204,8 +204,6 @@ export class TimeWheel {
     })).filter((g) => g.spirits.length),
   );
 
-  protected readonly unplaced = computed(() => this.spirits().filter((s) => !s.day));
-
   protected readonly dayArm = computed(() => this.arm(this.dayAngle(), R * 0.6));
   protected readonly hourArm = computed(() => this.arm(this.hourAngle(), R - 34));
 
@@ -223,13 +221,12 @@ export class TimeWheel {
   /** Highlight bands for the selected spirit's Season and Quarter, and their opposites. */
   protected readonly bands = computed(() => {
     const spirit = this.spirits().find((s) => s.id === this.selectedId());
-    if (!spirit?.day) return null;
+    if (!spirit) return null;
     const day = holyDay(spirit.day);
-    const doy = dayOfYear(day.month, day.day);
     const season = (center: number) =>
       annularSector(
-        dayToAngle(center - SEASON_HALF_WIDTH_DAYS),
-        dayToAngle(center + SEASON_HALF_WIDTH_DAYS),
+        center - SEASON_HALF_WIDTH_DEGREES,
+        center + SEASON_HALF_WIDTH_DEGREES,
         R - 46,
         R - 26,
       );
@@ -242,8 +239,8 @@ export class TimeWheel {
       );
     const spoke = polar(day.angle, R);
     return {
-      season: season(doy),
-      oppositeSeason: season(doy + 365 / 2),
+      season: season(day.angle),
+      oppositeSeason: season(day.angle + 180),
       quarter: quarter(day.hour),
       oppositeQuarter: quarter(day.hour + 12),
       spoke,

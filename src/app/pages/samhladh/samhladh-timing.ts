@@ -2,10 +2,13 @@ import { HOLY_DAYS, type HolyDay, holyDay, type Samhladh } from './samhladh.data
 
 /** The wheel uses a fixed 365-day year. */
 export const YEAR_DAYS = 365;
-/** A Season is the quarter of the year centred on a holy day (as a Quarter is 6 of 24 hours). */
-export const SEASON_HALF_WIDTH_DAYS = 45;
-/** A Quarter is the six hours centred on an Hour. */
+/** A Quarter is the six hours surrounding an Hour (p. 37: Midnight's Quarter is 9 PM to 3 AM). */
 export const QUARTER_HALF_WIDTH_HOURS = 3;
+/**
+ * A Season is the days between the two nearest holy days (p. 37: Midnight's Season runs from
+ * Samhain to Imbolc). Holy days sit 45° apart on the wheel, so that is ±45° around the spirit's Day.
+ */
+export const SEASON_HALF_WIDTH_DEGREES = 45;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_START = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
@@ -117,8 +120,7 @@ export function invocationTiming(
   spirit: Samhladh,
   selectedDay: number,
   selectedHour: number,
-): TimingResult | null {
-  if (!spirit.day) return null;
+): TimingResult {
   const day = holyDay(spirit.day);
   const oppositeDay = HOLY_DAYS.find((h) => h.angle === mod(day.angle + 180, 360))!;
   const hour = day.hour;
@@ -127,6 +129,7 @@ export function invocationTiming(
   const doy = mod(Math.round(selectedDay), YEAR_DAYS);
   const dayDist = (h: HolyDay) => circularDiff(doy, dayOfYear(h.month, h.day), YEAR_DAYS);
   const hourDist = (h: number) => circularDiff(selectedHour, h, 24);
+  const seasonDist = (h: HolyDay) => circularDiff(dayToAngle(doy), h.angle, 360);
 
   const modifiers: TimingModifier[] = [
     { id: 'hour', label: "On the spirit's Hour", value: 3, applies: hourDist(hour) < 0.5 },
@@ -141,7 +144,7 @@ export function invocationTiming(
       id: 'season',
       label: "In the spirit's Season",
       value: 1,
-      applies: dayDist(day) <= SEASON_HALF_WIDTH_DAYS,
+      applies: seasonDist(day) <= SEASON_HALF_WIDTH_DEGREES,
     },
     {
       id: 'opp-hour',
@@ -165,7 +168,7 @@ export function invocationTiming(
       id: 'opp-season',
       label: 'In the Opposite Season',
       value: -5,
-      applies: dayDist(oppositeDay) <= SEASON_HALF_WIDTH_DAYS,
+      applies: seasonDist(oppositeDay) <= SEASON_HALF_WIDTH_DEGREES,
     },
   ];
 
