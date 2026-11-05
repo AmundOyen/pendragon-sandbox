@@ -10,13 +10,14 @@ import { HlmCardImports } from '@spartan-ng/helm/card';
       <section hlmCard class="shadow-(--rpg-shadow-sm)">
         <div hlmCardHeader class="flex flex-col items-center gap-4 text-center">
           <img src="rpgworld-mark.svg" alt="" class="size-16" width="64" height="64" />
-          <h1 hlmCardTitle class="font-display text-3xl font-bold">Welcome to RPG World</h1>
-          <p hlmCardDescription class="text-base">Your character, always at hand.</p>
+          <h1 hlmCardTitle class="font-display text-3xl font-bold">Welcome to Pendragon Sandbox</h1>
+          <p hlmCardDescription class="text-base">Pendragon tools</p>
         </div>
         <div hlmCardContent>
           <p class="font-display text-center text-xl leading-relaxed">
-            The tavern is quiet for now. Pull up a chair — this is where your knights will be built,
-            tracked and carried from their first winter phase to their last great deed.
+            This is your Pendragon toolbox — a growing set of tools for running and playing King
+            Arthur Pendragon. Knights, winter phases, glory and the odd family history: it all ends
+            up here, close at hand when the table needs it.
           </p>
         </div>
       </section>

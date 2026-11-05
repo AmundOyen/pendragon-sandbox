@@ -18,7 +18,7 @@ import { AppSidebar } from './layout/app-sidebar/app-sidebar';
             orientation="vertical"
             class="me-2 data-vertical:h-4 data-vertical:self-center"
           />
-          <span class="font-display text-lg font-semibold">RPG World</span>
+          <span class="font-display text-lg font-semibold">Pendragon Sandbox</span>
         </header>
         <div class="flex-1">
           <router-outlet />
