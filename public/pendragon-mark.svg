@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Pendragon Sandbox logo: unfurled scroll with wax seal in a hexagon">
+  <path d="M512 52 L910 282 L910 742 L512 972 L114 742 L114 282 Z" fill="#2E7566"/>
+  <path d="M512 52 L910 282 L910 742 L512 972 Z" fill="#000" fill-opacity="0.25"/>
+  <rect x="300" y="340" width="424" height="344" fill="#F7CF6D"/>
+  <rect x="300" y="340" width="424" height="10" fill="#000" fill-opacity="0.2"/>
+  <rect x="300" y="674" width="424" height="10" fill="#000" fill-opacity="0.2"/>
+  <g fill="#000" fill-opacity="0.5">
+    <rect x="350" y="392" width="140" height="18"/><rect x="502" y="392" width="70" height="18"/><rect x="584" y="392" width="90" height="18"/>
+    <rect x="350" y="446" width="80" height="18"/><rect x="442" y="446" width="150" height="18"/><rect x="604" y="446" width="70" height="18"/>
+    <rect x="350" y="500" width="120" height="18"/><rect x="482" y="500" width="100" height="18"/><rect x="594" y="500" width="80" height="18"/>
+    <rect x="350" y="554" width="160" height="18"/><rect x="522" y="554" width="60" height="18"/>
+  </g>
+  <circle cx="636" cy="612" r="44" fill="#A8442B"/>
+  <circle cx="636" cy="612" r="26" fill="none" stroke="#7A2F1C" stroke-width="8"/>
+  <rect x="244" y="310" width="76" height="404" rx="38" fill="#FBE09B"/>
+  <rect x="296" y="310" width="24" height="404" fill="#000" fill-opacity="0.15"/>
+  <rect x="704" y="310" width="76" height="404" rx="38" fill="#FBE09B"/>
+  <rect x="704" y="310" width="24" height="404" fill="#000" fill-opacity="0.15"/>
+  <g fill="#3F2900">
+    <rect x="262" y="262" width="40" height="64" rx="14"/><rect x="262" y="698" width="40" height="64" rx="14"/>
+    <rect x="722" y="262" width="40" height="64" rx="14"/><rect x="722" y="698" width="40" height="64" rx="14"/>
+  </g>
+</svg>
