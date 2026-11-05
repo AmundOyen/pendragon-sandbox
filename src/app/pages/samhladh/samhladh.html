@@ -1,0 +1,175 @@
+<section class="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
+  <header class="flex flex-col gap-1">
+    <h1 class="font-display text-3xl font-bold">Samhladh Invocations</h1>
+    <p class="text-muted-foreground max-w-prose">
+      Drag the gold arm to the Day and the teal arm to the Hour, then pick the spirit you are
+      calling on. Both arms snap to the holy days and marked hours when they come close.
+    </p>
+  </header>
+
+  <div class="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div class="px-8 py-12 sm:px-14">
+      <app-time-wheel
+        [spirits]="spirits"
+        [(dayAngle)]="dayAngle"
+        [(hourAngle)]="hourAngle"
+        [(selectedId)]="selectedId"
+      />
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <section hlmCard aria-labelledby="when-title">
+        <div hlmCardHeader>
+          <h2 hlmCardTitle id="when-title">When</h2>
+        </div>
+        <dl hlmCardContent class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+          <dt class="text-muted-foreground flex items-center gap-2">
+            <span class="bg-primary size-3 rounded-full" aria-hidden="true"></span>Day
+          </dt>
+          <dd class="font-medium" aria-live="polite">{{ dateText() }}</dd>
+          <dt class="text-muted-foreground flex items-center gap-2">
+            <span class="bg-secondary size-3 rounded-full" aria-hidden="true"></span>Hour
+          </dt>
+          <dd class="font-medium" aria-live="polite">{{ hourText() }}</dd>
+        </dl>
+      </section>
+
+      @if (spirit(); as s) {
+        <section hlmCard aria-labelledby="spirit-title">
+          <div hlmCardHeader>
+            <h2 hlmCardTitle id="spirit-title" class="font-display text-2xl font-bold">
+              {{ s.name }}
+            </h2>
+            <p hlmCardDescription>
+              Invocation trait <span hlmBadge variant="secondary">{{ s.trait }}</span>
+            </p>
+          </div>
+
+          <div hlmCardContent class="flex flex-col gap-5">
+            @if (timing(); as t) {
+              <div class="flex items-baseline justify-between gap-4">
+                <span class="text-muted-foreground text-sm">
+                  Day {{ t.day.name }} · Hour {{ formatHour(t.hour) }}
+                </span>
+                <span
+                  class="font-display text-4xl font-bold tabular-nums"
+                  [class.text-destructive]="t.total < 0"
+                  aria-live="polite"
+                  >{{ signed(t.total) }}</span
+                >
+              </div>
+              <ul class="flex flex-col gap-1 text-sm" aria-label="Timing modifiers">
+                @for (m of t.modifiers; track m.id) {
+                  <li
+                    class="flex justify-between gap-4 rounded-md px-2 py-1"
+                    [class]="
+                      m.applies
+                        ? m.value > 0
+                          ? 'bg-accent text-accent-foreground font-medium'
+                          : 'bg-destructive/10 text-destructive font-medium'
+                        : 'text-muted-foreground'
+                    "
+                  >
+                    <span>
+                      {{ m.label }}
+                      @if (!m.applies) {
+                        <span class="sr-only">(does not apply)</span>
+                      }
+                    </span>
+                    <span class="tabular-nums">{{ signed(m.value) }}</span>
+                  </li>
+                }
+              </ul>
+              <p class="text-muted-foreground text-xs">
+                Opposite: {{ t.oppositeDay.name }} · {{ formatHour(t.oppositeHour) }}
+              </p>
+
+              <div class="flex flex-col gap-2">
+                <label hlmLabel for="trait-value">Your {{ s.trait }} value</label>
+                <input
+                  hlmInput
+                  id="trait-value"
+                  type="number"
+                  inputmode="numeric"
+                  min="0"
+                  max="40"
+                  class="w-28"
+                  [value]="traitValue() ?? ''"
+                  (input)="onTraitInput($event)"
+                />
+                @if (target() !== null) {
+                  <p class="text-sm" aria-live="polite">
+                    Roll against <strong class="text-base tabular-nums">{{ target() }}</strong>
+                    on 1d20.
+                  </p>
+                }
+              </div>
+            }
+
+            <fieldset class="flex flex-col gap-2">
+              <legend class="mb-2 text-sm font-medium">Tattoo</legend>
+              <hlm-radio-group
+                class="gap-2"
+                [value]="tattoo()"
+                (valueChange)="tattoo.set($any($event))"
+              >
+                <label class="flex items-center gap-2 text-sm" hlmLabel>
+                  <hlm-radio value="clan"><hlm-radio-indicator indicator /></hlm-radio>
+                  Clan Samhladh
+                </label>
+                <label class="flex items-center gap-2 text-sm" hlmLabel>
+                  <hlm-radio value="friend"><hlm-radio-indicator indicator /></hlm-radio>
+                  Warrior Spirit Friend
+                </label>
+              </hlm-radio-group>
+            </fieldset>
+
+            <div class="flex flex-col gap-2 text-sm">
+              <h3 class="font-semibold">On a success</h3>
+              @if (tattoo() === 'clan') {
+                <p>
+                  @if (s.standard) {
+                    Usual aid to {{ s.bonus }}: +3 skill or +1 stat for 30 minutes, or +9 skill or
+                    +3 stat for 1 minute.
+                  } @else {
+                    {{ s.bonus }}.
+                  }
+                </p>
+              } @else {
+                <p>+1 stat or +3 skill for 15 minutes.</p>
+              }
+              <p class="text-muted-foreground">
+                Critical: the benefit lasts 1 hour. Fumble: the tattoo fades until you win the
+                spirit back in the Otherworld. One invocation roll per day.
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-2 text-sm">
+              <h3 class="font-semibold">Geasa</h3>
+              <ul class="list-disc ps-5">
+                @for (g of s.geasa; track g) {
+                  <li>{{ g }}</li>
+                }
+              </ul>
+              <p class="text-muted-foreground">{{ s.description }}</p>
+            </div>
+          </div>
+        </section>
+      } @else {
+        <section hlmCard>
+          <div hlmCardContent>
+            <p class="text-muted-foreground">
+              Choose a Samhladh on the wheel to see its timing modifiers.
+            </p>
+          </div>
+        </section>
+      }
+
+      <p class="text-muted-foreground text-xs">
+        Modifiers are cumulative: best +8, worst −23. The Hour counts within 30 minutes of it and
+        the Quarter is the six hours around it (Midnight: 9 PM to 3 AM). The Season runs between the
+        two holy days either side of the Day (Winter Solstice: Samhain to Imbolc).
+      </p>
+    </div>
+  </div>
+</section>

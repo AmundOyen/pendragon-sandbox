@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideHouse, lucideMoon, lucideSun } from '@ng-icons/lucide';
+import { lucideCompass, lucideHouse, lucideMoon, lucideSun } from '@ng-icons/lucide';
 import { HlmSidebarImports } from '@spartan-ng/helm/sidebar';
 import { type Theme, ThemeService } from '../../core/theme/theme.service';
 
@@ -21,7 +21,7 @@ interface ThemeAction {
 @Component({
   selector: 'app-sidebar',
   imports: [HlmSidebarImports, NgIcon, RouterLink, RouterLinkActive],
-  providers: [provideIcons({ lucideHouse, lucideMoon, lucideSun })],
+  providers: [provideIcons({ lucideCompass, lucideHouse, lucideMoon, lucideSun })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-sidebar.html',
 })
@@ -30,6 +30,7 @@ export class AppSidebar {
 
   protected readonly navItems: NavItem[] = [
     { label: 'Home', icon: 'lucideHouse', route: '/', exact: true },
+    { label: 'Samhladh Invocations', icon: 'lucideCompass', route: '/samhladh' },
   ];
 
   protected readonly themeActions: ThemeAction[] = [
