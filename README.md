@@ -55,4 +55,7 @@ The sidebar collapses to icons on desktop (trigger button, rail, or
 copies `index.html` to `404.html` for deep-link fallback, and deploys on every
 push to `main` (or manually via _Run workflow_).
 
+`.github/workflows/ci.yml` runs `npm test` and `npm run build` on every pull
+request and on pushes to `main`.
+
 One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
