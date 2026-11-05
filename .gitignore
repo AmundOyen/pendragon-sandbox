@@ -43,3 +43,6 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 .nx/
+
+# Copied into public/ by @3d-dice/dice-box postinstall; the build copies them from node_modules
+/public/assets/
