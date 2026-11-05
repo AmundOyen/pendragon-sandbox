@@ -1,0 +1,69 @@
+<hlm-sidebar collapsible="icon">
+  <div hlmSidebarHeader>
+    <ul hlmSidebarMenu>
+      <li hlmSidebarMenuItem>
+        <a hlmSidebarMenuButton size="lg" routerLink="/" tooltip="RPG World">
+          <img src="rpgworld-mark.svg" alt="" class="size-8 shrink-0" width="32" height="32" />
+          <span class="flex flex-col leading-tight">
+            <span class="font-display text-lg font-semibold">RPG World</span>
+            <span class="text-muted-foreground text-xs">Pendragon sandbox</span>
+          </span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div hlmSidebarContent>
+    <nav hlmSidebarGroup aria-label="Main">
+      <div hlmSidebarGroupLabel>Navigation</div>
+      <div hlmSidebarGroupContent>
+        <ul hlmSidebarMenu>
+          @for (item of navItems; track item.route) {
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="item.route"
+                routerLinkActive
+                #rla="routerLinkActive"
+                [routerLinkActiveOptions]="{ exact: !!item.exact }"
+                [isActive]="rla.isActive"
+                [attr.aria-current]="rla.isActive ? 'page' : null"
+                [tooltip]="item.label"
+              >
+                <ng-icon [name]="item.icon" />
+                <span>{{ item.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    </nav>
+  </div>
+
+  <div hlmSidebarFooter>
+    <div hlmSidebarGroup class="p-0">
+      <div hlmSidebarGroupLabel>Appearance</div>
+      <ul hlmSidebarMenu role="radiogroup" aria-label="Color theme">
+        @for (action of themeActions; track action.theme) {
+          @let selected = themeService.theme() === action.theme;
+          <li hlmSidebarMenuItem>
+            <button
+              hlmSidebarMenuButton
+              type="button"
+              role="radio"
+              [attr.aria-checked]="selected"
+              [isActive]="selected"
+              [tooltip]="action.label"
+              (click)="themeService.setTheme(action.theme)"
+            >
+              <ng-icon [name]="action.icon" />
+              <span>{{ action.label }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <button hlmSidebarRail></button>
+</hlm-sidebar>
