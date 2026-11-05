@@ -32,6 +32,7 @@ export class AppSidebar {
   protected readonly navItems: NavItem[] = [
     { label: 'Home', icon: 'ra-tower', route: '/', exact: true },
     { label: 'Samhladh Invocations', icon: 'ra-aura', route: '/samhladh' },
+    { label: 'Dice Tray', icon: 'ra-perspective-dice-six', route: '/dice' },
   ];
 
   protected readonly themeActions: ThemeAction[] = [

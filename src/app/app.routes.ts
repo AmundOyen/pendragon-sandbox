@@ -11,5 +11,10 @@ export const routes: Routes = [
     title: 'Samhladh Invocations · Pendragon Sandbox',
     loadComponent: () => import('./pages/samhladh/samhladh').then((m) => m.SamhladhPage),
   },
+  {
+    path: 'dice',
+    title: 'Dice Tray · Pendragon Sandbox',
+    loadComponent: () => import('./pages/dice-tray/dice-tray').then((m) => m.DiceTrayPage),
+  },
   { path: '**', redirectTo: '' },
 ];

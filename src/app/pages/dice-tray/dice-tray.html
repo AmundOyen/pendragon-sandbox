@@ -1,0 +1,272 @@
+<section class="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="font-display text-3xl font-bold">Dice Tray</h1>
+      <p class="text-muted-foreground max-w-prose">
+        Pick your dice and a modifier, then roll them onto the tray.
+      </p>
+    </div>
+    <button
+      hlmBtn
+      variant="outline"
+      type="button"
+      [disabled]="rolling() || !latest()"
+      (click)="clearTray()"
+    >
+      <ng-icon name="lucideEraser" />
+      Clear tray
+    </button>
+  </header>
+
+  <div class="grid items-start gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
+    <!-- Dice picker -->
+    <section hlmCard aria-labelledby="picker-title" class="lg:sticky lg:top-20">
+      <div hlmCardHeader class="flex flex-row items-center justify-between">
+        <h2 hlmCardTitle id="picker-title">Pick your dice</h2>
+        <button
+          hlmBtn
+          variant="ghost"
+          size="icon-sm"
+          type="button"
+          aria-label="Clear selected dice"
+          title="Clear selection"
+          [disabled]="diceCount() === 0 && modifier() === 0"
+          (click)="clearSelection()"
+        >
+          <ng-icon name="lucideDelete" />
+        </button>
+      </div>
+
+      <div hlmCardContent class="flex flex-col gap-5">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
+          @for (die of dieTypes; track die) {
+            <app-die-selector
+              [die]="die"
+              [count]="pool()[die]"
+              (adjust)="adjustCount(die, $event)"
+              (cleared)="setCount(die, 0)"
+            />
+          }
+        </div>
+
+        <div class="flex flex-col items-center gap-2">
+          <label hlmLabel for="modifier">Modifier</label>
+          <div class="flex items-center gap-2">
+            <button
+              hlmBtn
+              variant="outline"
+              size="icon"
+              type="button"
+              aria-label="Decrease modifier"
+              (click)="nudgeModifier(-1)"
+            >
+              <ng-icon name="lucideMinus" />
+            </button>
+            <input
+              hlmInput
+              id="modifier"
+              type="number"
+              inputmode="numeric"
+              min="-999"
+              max="999"
+              class="w-20 [appearance:textfield] text-center tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              [value]="modifier()"
+              (change)="onModifierInput($event)"
+            />
+            <button
+              hlmBtn
+              variant="outline"
+              size="icon"
+              type="button"
+              aria-label="Increase modifier"
+              (click)="nudgeModifier(1)"
+            >
+              <ng-icon name="lucidePlus" />
+            </button>
+          </div>
+        </div>
+
+        <button
+          hlmBtn
+          type="button"
+          class="roll-button h-12 text-base"
+          [disabled]="!canRoll()"
+          (click)="roll()"
+        >
+          <i
+            class="ra ra-perspective-dice-random text-lg leading-none motion-reduce:animate-none"
+            [class.animate-spin]="rolling()"
+            aria-hidden="true"
+          ></i>
+          @if (diceCount() === 0) {
+            Select dice to roll
+          } @else if (rolling()) {
+            Rolling…
+          } @else {
+            Roll {{ formula() }}
+          }
+        </button>
+      </div>
+    </section>
+
+    <div class="flex min-w-0 flex-col gap-6">
+      <!-- 3D tray: teal felt in a dark-gold rim -->
+      <section aria-label="Dice tray">
+        <div
+          #trayHost
+          class="relative h-[clamp(18rem,55vh,40rem)] overflow-hidden rounded-xl bg-(--rpg-secondary-600) shadow-[inset_0_0_0_10px_var(--rpg-primary-900),inset_0_0_40px_oklch(27%_0.02_60/0.45)] [&_canvas]:block [&_canvas]:size-full"
+        >
+          @if (rollerStatus() === 'loading') {
+            <div
+              class="pointer-events-none absolute top-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-(--rpg-secondary-900)/80 px-4 py-2 text-sm text-(--rpg-secondary-50)"
+            >
+              <hlm-spinner aria-label="Loading 3D dice" />
+              Loading 3D dice…
+            </div>
+          } @else if (rollerStatus() === 'fallback') {
+            <div
+              class="pointer-events-none absolute top-6 left-1/2 flex max-w-[calc(100%-3rem)] -translate-x-1/2 items-center gap-2 rounded-full bg-(--rpg-secondary-900)/80 px-4 py-2 text-center text-sm text-(--rpg-secondary-50)"
+            >
+              <ng-icon name="lucideInfo" aria-hidden="true" />
+              3D dice are unavailable in this browser. Rolls still work.
+            </div>
+          }
+          @if (!latest() && rollerStatus() === 'ready') {
+            <p
+              class="pointer-events-none absolute bottom-6 left-1/2 m-0 max-w-[calc(100%-3rem)] -translate-x-1/2 rounded-full bg-(--rpg-secondary-900)/80 px-4 py-2 text-center text-sm text-(--rpg-secondary-50)"
+            >
+              Pick some dice and roll them onto the felt.
+            </p>
+          }
+        </div>
+      </section>
+
+      <!-- Latest result -->
+      <section aria-live="polite" aria-labelledby="result-heading">
+        <h2 id="result-heading" class="sr-only">Result</h2>
+        @if (latest(); as result) {
+          <article
+            hlmCard
+            class="transition-opacity motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95"
+            [class.opacity-50]="rolling()"
+          >
+            <div hlmCardContent class="flex flex-col gap-4">
+              <header class="flex flex-wrap items-baseline justify-between gap-4">
+                <span class="result-formula text-muted-foreground text-lg font-medium">{{
+                  formatResult(result)
+                }}</span>
+                <span
+                  class="result-total font-display text-primary text-5xl font-bold tabular-nums"
+                  >{{ result.total }}</span
+                >
+              </header>
+              <div class="grid gap-2">
+                @for (group of result.groups; track group.die) {
+                  <div class="grid grid-cols-[5.5rem_1fr_auto] items-center gap-2">
+                    <span class="text-muted-foreground text-sm font-medium"
+                      >{{ group.rolls.length }}{{ group.die }}</span
+                    >
+                    <span class="flex flex-wrap gap-1.5">
+                      @for (value of group.rolls; track $index) {
+                        <span
+                          class="min-w-9 rounded-md px-1.5 py-1 text-center font-semibold tabular-nums"
+                          [class]="
+                            isMax(group.die, value)
+                              ? 'bg-primary text-primary-foreground font-bold'
+                              : isMin(value)
+                                ? 'bg-destructive/15 text-destructive'
+                                : 'bg-muted'
+                          "
+                          [attr.aria-label]="
+                            value +
+                            (isMax(group.die, value)
+                              ? ' (highest)'
+                              : isMin(value)
+                                ? ' (lowest)'
+                                : '')
+                          "
+                        >
+                          {{ value }}
+                        </span>
+                      }
+                    </span>
+                    <span class="font-semibold tabular-nums">= {{ group.subtotal }}</span>
+                  </div>
+                }
+                @if (result.modifier !== 0) {
+                  <div class="grid grid-cols-[5.5rem_1fr_auto] items-center gap-2">
+                    <span class="text-muted-foreground text-sm font-medium">Modifier</span>
+                    <span></span>
+                    <span class="font-semibold tabular-nums"
+                      >{{ result.modifier > 0 ? '+' : '' }}{{ result.modifier }}</span
+                    >
+                  </div>
+                }
+              </div>
+              <footer class="flex justify-end">
+                <button
+                  hlmBtn
+                  variant="outline"
+                  type="button"
+                  [disabled]="rolling()"
+                  (click)="reroll(result)"
+                >
+                  <ng-icon name="lucideRotateCcw" />
+                  Roll again
+                </button>
+              </footer>
+            </div>
+          </article>
+        } @else {
+          <p
+            class="text-muted-foreground m-0 rounded-lg border border-dashed px-4 py-6 text-center"
+          >
+            Tap a die to add it, then press roll.
+          </p>
+        }
+      </section>
+
+      <!-- History -->
+      @if (previous().length > 0) {
+        <section hlmCard aria-labelledby="history-heading">
+          <div hlmCardHeader class="flex flex-row items-center justify-between">
+            <h2 hlmCardTitle id="history-heading">History</h2>
+            <button hlmBtn variant="ghost" size="sm" type="button" (click)="clearHistory()">
+              <ng-icon name="lucideTrash2" />
+              Clear
+            </button>
+          </div>
+          <ul hlmCardContent class="m-0 grid list-none gap-1">
+            @for (entry of previous(); track entry.id) {
+              <li class="bg-muted/60 flex items-center gap-3 rounded-md py-1.5 ps-3 pe-1">
+                <div class="flex min-w-0 flex-1 flex-col">
+                  <span>{{ formatResult(entry) }}</span>
+                  <span class="text-muted-foreground truncate text-xs">
+                    @for (group of entry.groups; track group.die; let last = $last) {
+                      {{ group.rolls.join(', ') }}{{ last ? '' : ' | ' }}
+                    }
+                  </span>
+                </div>
+                <span class="font-display text-xl font-semibold tabular-nums">{{
+                  entry.total
+                }}</span>
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="icon-sm"
+                  type="button"
+                  aria-label="Roll again"
+                  title="Roll again"
+                  [disabled]="rolling()"
+                  (click)="reroll(entry)"
+                >
+                  <ng-icon name="lucideRotateCcw" />
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  </div>
+</section>
