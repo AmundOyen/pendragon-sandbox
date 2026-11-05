@@ -1,0 +1,129 @@
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+
+@import '@spartan-ng/brain/hlm-tailwind-preset.css';
+
+/*
+ * RpgWorld Design System → Spartan UI theme.
+ * Semantic values are copied verbatim from the design system's tokens.json.
+ * Spartan/shadcn toggles dark mode with the `.dark` class on <html>
+ * (see ThemeService).
+ */
+
+@theme inline {
+  --font-display: 'Spectral', Georgia, serif;
+}
+
+:root {
+  color-scheme: light;
+
+  --font-sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif-display: 'Spectral', Georgia, serif;
+
+  /* Ramps (fixed in both themes) */
+  --rpg-primary-50: #fdf8ed;
+  --rpg-primary-100: #fbefd3;
+  --rpg-primary-200: #f5dda0;
+  --rpg-primary-300: #edc66c;
+  --rpg-primary-400: #e0ac42;
+  --rpg-primary-500: #c9922b;
+  --rpg-primary-600: #a8761f;
+  --rpg-primary-700: #835a18;
+  --rpg-primary-800: #624212;
+  --rpg-primary-900: #3f2a0b;
+  --rpg-secondary-50: #f1f7f6;
+  --rpg-secondary-100: #dceae7;
+  --rpg-secondary-200: #b3d3cc;
+  --rpg-secondary-300: #82b7ac;
+  --rpg-secondary-400: #4f9385;
+  --rpg-secondary-500: #2e7566;
+  --rpg-secondary-600: #235c50;
+  --rpg-secondary-700: #1b463d;
+  --rpg-secondary-800: #13312b;
+  --rpg-secondary-900: #0b1d19;
+  --rpg-destructive-500: #a8442b;
+
+  --rpg-shadow-sm: 0 1px 2px oklch(27% 0.02 60 / 0.06);
+  --rpg-shadow-md: 0 4px 12px oklch(27% 0.02 60 / 0.1), 0 1px 2px oklch(27% 0.02 60 / 0.06);
+  --rpg-shadow-lg: 0 12px 32px oklch(27% 0.02 60 / 0.14), 0 2px 4px oklch(27% 0.02 60 / 0.08);
+
+  --radius: 0.5rem;
+
+  /* Semantic — light */
+  --background: oklch(98.3% 0.005 78);
+  --foreground: oklch(27.2% 0.013 72);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(27.2% 0.013 72);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(27.2% 0.013 72);
+  --primary: oklch(69.6% 0.131 78);
+  --primary-foreground: oklch(30.4% 0.054 73);
+  --secondary: oklch(51.3% 0.075 177);
+  --secondary-foreground: oklch(97.1% 0.006 185);
+  --muted: oklch(94% 0.01 78);
+  --muted-foreground: oklch(60.8% 0.021 75);
+  --accent: oklch(92.6% 0.015 182);
+  --accent-foreground: oklch(28.8% 0.038 179);
+  --destructive: oklch(51.7% 0.138 35);
+  --destructive-foreground: oklch(98% 0 0);
+  --border: oklch(90% 0.015 81);
+  --input: oklch(90% 0.015 81);
+  --ring: oklch(69.6% 0.131 78);
+
+  /* Charts — drawn from the gold / teal ramps */
+  --chart-1: var(--rpg-primary-500);
+  --chart-2: var(--rpg-secondary-500);
+  --chart-3: var(--rpg-primary-700);
+  --chart-4: var(--rpg-secondary-300);
+  --chart-5: var(--rpg-destructive-500);
+
+  /* Sidebar — card surface, teal hover (the DS's menu-item hover), gold primary */
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--card-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --background: oklch(24% 0.013 62);
+  --foreground: oklch(95.5% 0.011 72);
+  --card: oklch(27.6% 0.016 59);
+  --card-foreground: oklch(95.5% 0.011 72);
+  --popover: oklch(27.6% 0.016 59);
+  --popover-foreground: oklch(95.5% 0.011 72);
+  --primary: oklch(77.4% 0.134 82);
+  --primary-foreground: oklch(30.4% 0.054 73);
+  --secondary: oklch(73.9% 0.058 180);
+  --secondary-foreground: oklch(21.4% 0.025 178);
+  --muted: oklch(30% 0.015 60);
+  --muted-foreground: oklch(75.2% 0.022 75);
+  --accent: oklch(36.1% 0.05 178);
+  --accent-foreground: oklch(84.1% 0.035 181);
+  --destructive: oklch(58% 0.14 35);
+  --destructive-foreground: oklch(98% 0 0);
+  --border: oklch(35.6% 0.022 67);
+  --input: oklch(35.6% 0.022 67);
+  --ring: oklch(77.4% 0.134 82);
+
+  /* Shadows read muddy on warm dark surfaces: drop them for 1px borders. */
+  --rpg-shadow-sm: none;
+  --rpg-shadow-md: none;
+  --rpg-shadow-lg: 0 12px 32px oklch(0% 0 0 / 0.4);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
