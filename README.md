@@ -46,6 +46,10 @@ convention), set by `ThemeService` and by a small inline script in
 `index.html` that prevents a flash of the wrong theme. Fonts: Spectral
 (display, `font-display`) and Public Sans (UI).
 
+### Icons
+
+[RPG Awesome](https://nagoshiashumari.github.io/Rpg-Awesome/) (`rpg-awesome`, font SIL OFL 1.1 / CSS MIT) is loaded globally via `angular.json`. Use it as `<i class="ra ra-tower" aria-hidden="true"></i>`; the sidebar navigation takes the class name in `navItems` (`icon: 'ra-tower'`). UI icons such as the theme toggle use Lucide through `@ng-icons/lucide`.
+
 The sidebar collapses to icons on desktop (trigger button, rail, or
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>B</kbd>) and becomes a sheet on mobile.
 

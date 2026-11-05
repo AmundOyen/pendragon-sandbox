@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCompass, lucideHouse, lucideMoon, lucideSun } from '@ng-icons/lucide';
+import { lucideMoon, lucideSun } from '@ng-icons/lucide';
 import { HlmSidebarImports } from '@spartan-ng/helm/sidebar';
 import { type Theme, ThemeService } from '../../core/theme/theme.service';
 
 interface NavItem {
   label: string;
+  /** RPG Awesome icon class, e.g. `ra-tower` (https://nagoshiashumari.github.io/Rpg-Awesome/). */
   icon: string;
   route: string;
   exact?: boolean;
@@ -21,7 +22,7 @@ interface ThemeAction {
 @Component({
   selector: 'app-sidebar',
   imports: [HlmSidebarImports, NgIcon, RouterLink, RouterLinkActive],
-  providers: [provideIcons({ lucideCompass, lucideHouse, lucideMoon, lucideSun })],
+  providers: [provideIcons({ lucideMoon, lucideSun })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-sidebar.html',
 })
@@ -29,8 +30,8 @@ export class AppSidebar {
   protected readonly themeService = inject(ThemeService);
 
   protected readonly navItems: NavItem[] = [
-    { label: 'Home', icon: 'lucideHouse', route: '/', exact: true },
-    { label: 'Samhladh Invocations', icon: 'lucideCompass', route: '/samhladh' },
+    { label: 'Home', icon: 'ra-tower', route: '/', exact: true },
+    { label: 'Samhladh Invocations', icon: 'ra-aura', route: '/samhladh' },
   ];
 
   protected readonly themeActions: ThemeAction[] = [
