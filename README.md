@@ -46,6 +46,10 @@ convention), set by `ThemeService` and by a small inline script in
 `index.html` that prevents a flash of the wrong theme. Fonts: Spectral
 (display, `font-display`) and Public Sans (UI).
 
+### Dice Tray
+
+`/dice` is ported from [AmundOyen/dice-tray](https://github.com/AmundOyen/dice-tray) and restyled with Spartan and the RpgWorld tokens. The 3D tray uses [@3d-dice/dice-box](https://www.npmjs.com/package/@3d-dice/dice-box) (MIT), which runs its physics in a web worker. Its models, textures and physics engine are copied from `node_modules/@3d-dice/dice-box/dist/assets` to `assets/dice-box/` by the build (see `angular.json`). The engine loads only when the page opens, and it is kept for the rest of the session: coming back to the page moves its canvas instead of starting a second engine. Without WebGL it falls back to plain random rolls. The selection and roll history are kept in local storage.
+
 ### Icons
 
 [RPG Awesome](https://nagoshiashumari.github.io/Rpg-Awesome/) (`rpg-awesome`, font SIL OFL 1.1 / CSS MIT) is loaded globally via `angular.json`. Use it as `<i class="ra ra-tower" aria-hidden="true"></i>`; the sidebar navigation takes the class name in `navItems` (`icon: 'ra-tower'`). UI icons such as the theme toggle use Lucide through `@ng-icons/lucide`.
