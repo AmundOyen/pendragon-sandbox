@@ -1,0 +1,249 @@
+<div class="relative mx-auto aspect-square w-full max-w-[44rem] select-none">
+  <!-- Base: ring, spokes, ticks and the selected spirit's timing bands -->
+  <svg viewBox="-500 -500 1000 1000" class="absolute inset-0 size-full" aria-hidden="true">
+    <circle [attr.r]="R" class="fill-card stroke-foreground" stroke-width="3" />
+    @if (bands(); as b) {
+      <path [attr.d]="b.season" class="fill-secondary opacity-40" />
+      <path [attr.d]="b.oppositeSeason" class="fill-destructive opacity-30" />
+      <path [attr.d]="b.quarter" class="fill-secondary opacity-70" />
+      <path [attr.d]="b.oppositeQuarter" class="fill-destructive opacity-60" />
+    }
+    @for (s of spokes; track s.id) {
+      <line
+        x1="0"
+        y1="0"
+        [attr.x2]="s.x"
+        [attr.y2]="s.y"
+        class="stroke-foreground/60"
+        stroke-width="2"
+      />
+    }
+    @if (bands(); as b) {
+      <line
+        x1="0"
+        y1="0"
+        [attr.x2]="b.spoke.x"
+        [attr.y2]="b.spoke.y"
+        class="stroke-secondary"
+        stroke-width="6"
+      />
+      <line
+        x1="0"
+        y1="0"
+        [attr.x2]="b.oppositeSpoke.x"
+        [attr.y2]="b.oppositeSpoke.y"
+        class="stroke-destructive"
+        stroke-width="4"
+        stroke-dasharray="14 10"
+      />
+    }
+    @for (t of ticks; track $index) {
+      <line
+        [attr.x1]="t.x1"
+        [attr.y1]="t.y1"
+        [attr.x2]="t.x2"
+        [attr.y2]="t.y2"
+        class="stroke-foreground"
+        [attr.stroke-width]="t.major ? 3 : 1.5"
+      />
+    }
+  </svg>
+
+  <!-- Hour and holy-day labels -->
+  @for (h of hourLabels; track h.hour) {
+    <span
+      class="text-muted-foreground pointer-events-none absolute hidden text-xs whitespace-nowrap italic sm:inline"
+      [style.left.%]="h.left"
+      [style.top.%]="h.top"
+      [style.transform]="h.transform"
+      aria-hidden="true"
+      >{{ h.label }}</span
+    >
+  }
+  @for (h of holyLabels; track h.id) {
+    <span
+      class="pointer-events-none absolute flex w-20 -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center leading-tight sm:w-28"
+      [style.left.%]="h.left"
+      [style.top.%]="h.top"
+      aria-hidden="true"
+    >
+      <span class="font-display text-xs font-semibold tracking-wide uppercase sm:text-sm">{{
+        h.name
+      }}</span>
+      <span class="text-muted-foreground text-[0.625rem] italic sm:text-xs">({{ h.date }})</span>
+      <span class="text-[0.625rem] italic sm:text-xs">{{ h.hourLabel }}</span>
+    </span>
+  }
+
+  <!-- Samhladh animals: pick the spirit to invoke -->
+  <div role="group" aria-label="Samhladh spirits" class="hidden sm:block">
+    @for (l of spiritLabels(); track l.spirit.id) {
+      @let active = selectedId() === l.spirit.id;
+      <button
+        type="button"
+        class="focus-visible:ring-ring absolute rounded-sm px-1 py-0.5 text-xs leading-tight whitespace-nowrap transition-colors outline-none focus-visible:ring-2 lg:text-sm"
+        [class]="
+          active
+            ? 'bg-primary text-primary-foreground font-semibold'
+            : 'bg-card hover:bg-accent hover:text-accent-foreground'
+        "
+        [style.left.%]="l.left"
+        [style.top.%]="l.top"
+        [style.transform]="l.transform"
+        [attr.aria-pressed]="active"
+        (click)="select(l.spirit.id)"
+      >
+        {{ l.spirit.name }}
+      </button>
+    }
+  </div>
+
+  <!-- Arms: drag (or focus and use the arrow keys) to set Day and Hour -->
+  <svg
+    #arms
+    viewBox="-500 -500 1000 1000"
+    class="pointer-events-none absolute inset-0 size-full"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp()"
+    (pointercancel)="onPointerUp()"
+  >
+    <line
+      x1="0"
+      y1="0"
+      [attr.x2]="hourArm().x"
+      [attr.y2]="hourArm().y"
+      class="stroke-secondary"
+      stroke-width="6"
+      stroke-linecap="round"
+    />
+    <line
+      x1="0"
+      y1="0"
+      [attr.x2]="dayArm().x"
+      [attr.y2]="dayArm().y"
+      class="stroke-primary"
+      stroke-width="14"
+      stroke-linecap="round"
+    />
+    <circle r="16" class="fill-foreground" />
+
+    <g
+      class="pointer-events-auto cursor-grab touch-none outline-none"
+      [class.cursor-grabbing]="dragging() === 'hour'"
+      tabindex="0"
+      role="slider"
+      aria-label="Hour"
+      aria-valuemin="0"
+      aria-valuemax="24"
+      [attr.aria-valuenow]="hourValue()"
+      [attr.aria-valuetext]="hourText()"
+      (pointerdown)="onPointerDown($event, 'hour')"
+      (keydown)="onKeydown($event, 'hour')"
+      (focus)="focused.set('hour')"
+      (blur)="focused.set(null)"
+    >
+      <circle [attr.cx]="hourArm().x" [attr.cy]="hourArm().y" r="48" fill="transparent" />
+      @if (focused() === 'hour') {
+        <circle
+          [attr.cx]="hourArm().x"
+          [attr.cy]="hourArm().y"
+          r="30"
+          class="fill-none stroke-ring"
+          stroke-width="6"
+        />
+      }
+      <circle
+        [attr.cx]="hourArm().x"
+        [attr.cy]="hourArm().y"
+        r="20"
+        class="fill-secondary stroke-card"
+        stroke-width="5"
+      />
+    </g>
+
+    <g
+      class="pointer-events-auto cursor-grab touch-none outline-none"
+      [class.cursor-grabbing]="dragging() === 'day'"
+      tabindex="0"
+      role="slider"
+      aria-label="Day"
+      aria-valuemin="0"
+      aria-valuemax="364"
+      [attr.aria-valuenow]="dayValue()"
+      [attr.aria-valuetext]="dayText()"
+      (pointerdown)="onPointerDown($event, 'day')"
+      (keydown)="onKeydown($event, 'day')"
+      (focus)="focused.set('day')"
+      (blur)="focused.set(null)"
+    >
+      <circle [attr.cx]="dayArm().x" [attr.cy]="dayArm().y" r="52" fill="transparent" />
+      @if (focused() === 'day') {
+        <circle
+          [attr.cx]="dayArm().x"
+          [attr.cy]="dayArm().y"
+          r="36"
+          class="fill-none stroke-ring"
+          stroke-width="6"
+        />
+      }
+      <circle
+        [attr.cx]="dayArm().x"
+        [attr.cy]="dayArm().y"
+        r="26"
+        class="fill-primary stroke-card"
+        stroke-width="5"
+      />
+    </g>
+  </svg>
+</div>
+
+<!-- Narrow screens: the spirits as a list grouped by holy day -->
+<div class="mt-10 flex flex-col gap-3 sm:hidden" role="group" aria-label="Samhladh spirits">
+  @for (g of spiritGroups(); track g.day.id) {
+    <div class="flex flex-col gap-1">
+      <span class="font-display text-sm font-semibold tracking-wide uppercase">{{
+        g.day.name
+      }}</span>
+      <div class="flex flex-wrap gap-1.5">
+        @for (s of g.spirits; track s.id) {
+          @let active = selectedId() === s.id;
+          <button
+            type="button"
+            class="focus-visible:ring-ring min-h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-2"
+            [class]="
+              active
+                ? 'bg-primary text-primary-foreground border-primary font-semibold'
+                : 'bg-card hover:bg-accent hover:text-accent-foreground'
+            "
+            [attr.aria-pressed]="active"
+            (click)="select(s.id)"
+          >
+            {{ s.name }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+@if (unplaced().length) {
+  <p class="text-muted-foreground mt-6 text-center text-sm">
+    Day not legible in the source:
+    @for (s of unplaced(); track s.id) {
+      @let active = selectedId() === s.id;
+      <button
+        type="button"
+        class="focus-visible:ring-ring ms-1 rounded-sm px-1 py-0.5 outline-none focus-visible:ring-2"
+        [class]="
+          active
+            ? 'bg-primary text-primary-foreground font-semibold'
+            : 'text-foreground hover:bg-accent hover:text-accent-foreground underline'
+        "
+        [attr.aria-pressed]="active"
+        (click)="select(s.id)"
+      >
+        {{ s.name }}
+      </button>
+    }
+  </p>
+}
