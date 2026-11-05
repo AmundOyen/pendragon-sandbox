@@ -9,7 +9,7 @@ import { HlmCardImports } from '@spartan-ng/helm/card';
     <section class="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-8">
       <section hlmCard class="shadow-(--rpg-shadow-sm)">
         <div hlmCardHeader class="flex flex-col items-center gap-4 text-center">
-          <img src="rpgworld-mark.svg" alt="" class="size-16" width="64" height="64" />
+          <img src="pendragon-mark.svg" alt="" class="size-16" width="64" height="64" />
           <h1 hlmCardTitle class="font-display text-3xl font-bold">Welcome to Pendragon Sandbox</h1>
           <p hlmCardDescription class="text-base">Pendragon tools</p>
         </div>
