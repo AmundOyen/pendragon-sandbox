@@ -1,6 +1,14 @@
 import { Injectable, signal } from '@angular/core';
 import type DiceBox from '@3d-dice/dice-box';
-import { DIE_TYPES, DicePool, DieGroupResult, DieType, RollResult, rollPool } from './dice';
+import {
+  DEFAULT_DICE_COLOR,
+  DIE_TYPES,
+  DicePool,
+  DieGroupResult,
+  DieType,
+  RollResult,
+  rollPool,
+} from './dice';
 
 export type RollerStatus = 'idle' | 'loading' | 'ready' | 'fallback';
 
@@ -8,8 +16,6 @@ export type RollerStatus = 'idle' | 'loading' | 'ready' | 'fallback';
 const INIT_TIMEOUT_MS = 20_000;
 const ROLL_TIMEOUT_MS = 30_000;
 
-/** Dice colour: RpgWorld gold-200, which reads well on the teal felt. */
-const DICE_COLOR = '#f5dda0';
 /** The 3D engine finds its container by this id. */
 const HOST_ID = 'dice-tray-3d';
 
@@ -50,14 +56,22 @@ export class DiceRoller {
     globalThis.dispatchEvent?.(new Event('resize'));
   }
 
-  async roll(pool: DicePool, modifier: number): Promise<Omit<RollResult, 'id' | 'timestamp'>> {
+  async roll(
+    pool: DicePool,
+    modifier: number,
+    color: string = DEFAULT_DICE_COLOR,
+  ): Promise<Omit<RollResult, 'id' | 'timestamp'>> {
     if (this.initPromise) await this.initPromise;
     const box = this.box;
     if (!box || this.status() !== 'ready') return rollPool(pool, modifier);
 
     const notation = DIE_TYPES.filter((die) => pool[die] > 0).map((die) => `${pool[die]}${die}`);
     try {
-      await withTimeout(box.roll(notation), ROLL_TIMEOUT_MS, 'The 3D roll did not settle in time.');
+      await withTimeout(
+        box.roll(notation, { themeColor: color }),
+        ROLL_TIMEOUT_MS,
+        'The 3D roll did not settle in time.',
+      );
       const groups = this.collectGroups(box.getRollResults(), pool);
       const total = groups.reduce((sum, g) => sum + g.subtotal, 0) + modifier;
       return { pool: { ...pool }, modifier, groups, total };
@@ -79,7 +93,7 @@ export class DiceRoller {
         container: `#${host.id}`,
         assetPath: assetPath(),
         theme: 'default',
-        themeColor: DICE_COLOR,
+        themeColor: DEFAULT_DICE_COLOR,
         scale: 6,
         enableShadows: true,
         shadowTransparency: 0.7,

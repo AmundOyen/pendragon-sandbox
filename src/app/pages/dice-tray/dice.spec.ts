@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { emptyPool, formatPool, poolSize, rollDie, rollPool } from './dice';
+import {
+  DICE_COLORS,
+  emptyPool,
+  formatPool,
+  isHexColor,
+  poolSize,
+  rollDie,
+  rollPool,
+} from './dice';
 
 describe('rollDie', () => {
   it('maps the lowest random value to 1', () => {
@@ -62,5 +70,18 @@ describe('formatPool', () => {
 describe('poolSize', () => {
   it('counts every selected die', () => {
     expect(poolSize({ ...emptyPool(), d4: 2, d12: 3 })).toBe(5);
+  });
+});
+
+describe('isHexColor', () => {
+  it('accepts #rrggbb colours, including every preset', () => {
+    expect(isHexColor('#A8442B')).toBe(true);
+    for (const c of DICE_COLORS) expect(isHexColor(c.value)).toBe(true);
+  });
+
+  it('rejects anything else', () => {
+    for (const v of ['red', '#fff', 'a8442b', '#a8442bff', 42, null, undefined]) {
+      expect(isHexColor(v)).toBe(false);
+    }
   });
 });

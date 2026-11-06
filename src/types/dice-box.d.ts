@@ -65,7 +65,10 @@ declare module '@3d-dice/dice-box' {
   export default class DiceBox {
     constructor(config: DiceBoxConfig);
     init(): Promise<this>;
-    roll(notation: DiceBoxRollInput): Promise<DiceBoxDieResult[]>;
+    roll(
+      notation: DiceBoxRollInput,
+      options?: { theme?: string; themeColor?: string; newStartPoint?: boolean },
+    ): Promise<DiceBoxDieResult[]>;
     add(notation: DiceBoxRollInput): Promise<DiceBoxDieResult[]>;
     clear(): this;
     hide(className?: string): this;

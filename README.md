@@ -48,7 +48,7 @@ convention), set by `ThemeService` and by a small inline script in
 
 ### Dice Tray
 
-`/dice` is ported from [AmundOyen/dice-tray](https://github.com/AmundOyen/dice-tray) and restyled with Spartan and the RpgWorld tokens. The 3D tray uses [@3d-dice/dice-box](https://www.npmjs.com/package/@3d-dice/dice-box) (MIT), which runs its physics in a web worker. Its models, textures and physics engine are copied from `node_modules/@3d-dice/dice-box/dist/assets` to `assets/dice-box/` by the build (see `angular.json`). The engine loads only when the page opens, and it is kept for the rest of the session: coming back to the page moves its canvas instead of starting a second engine. Without WebGL it falls back to plain random rolls. The selection and roll history are kept in local storage.
+`/dice` is ported from [AmundOyen/dice-tray](https://github.com/AmundOyen/dice-tray) and restyled with Spartan and the RpgWorld tokens. The 3D tray uses [@3d-dice/dice-box](https://www.npmjs.com/package/@3d-dice/dice-box) (MIT), which runs its physics in a web worker. Its models, textures and physics engine are copied from `node_modules/@3d-dice/dice-box/dist/assets` to `assets/dice-box/` by the build (see `angular.json`). The engine loads only when the page opens, and it is kept for the rest of the session: coming back to the page moves its canvas instead of starting a second engine. Without WebGL it falls back to plain random rolls. The dice colour (six presets from the RpgWorld palette, or any custom colour) is passed with each roll. The selection, dice colour and roll history are kept in local storage.
 
 ### Icons
 

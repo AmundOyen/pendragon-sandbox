@@ -8,8 +8,15 @@ class FakeDiceRoller {
   readonly status = () => 'fallback' as const;
   attach = async () => {};
   clear = () => {};
-  roll = async (pool: DicePool, modifier: number): Promise<Omit<RollResult, 'id' | 'timestamp'>> =>
-    rollPool(pool, modifier, () => 0.5);
+  lastColor: string | undefined;
+  roll = async (
+    pool: DicePool,
+    modifier: number,
+    color?: string,
+  ): Promise<Omit<RollResult, 'id' | 'timestamp'>> => {
+    this.lastColor = color;
+    return rollPool(pool, modifier, () => 0.5);
+  };
 }
 
 describe('DiceTrayPage', () => {
@@ -55,5 +62,33 @@ describe('DiceTrayPage', () => {
 
     expect(el.querySelector('.result-formula')?.textContent).toContain('2d6');
     expect(el.querySelector('.result-total')?.textContent?.trim()).toBe('8');
+  });
+
+  it('rolls in the picked dice colour and remembers it', async () => {
+    const { fixture, el } = await render();
+    const roller = TestBed.inject(DiceRoller) as unknown as FakeDiceRoller;
+    el.querySelector<HTMLInputElement>('input[name="dice-color"][aria-label="Brick"]')!.click();
+    el.querySelector<HTMLButtonElement>('app-die-selector[data-die="d8"] .die')!.click();
+    await fixture.whenStable();
+    el.querySelector<HTMLButtonElement>('.roll-button')!.click();
+    await fixture.whenStable();
+    expect(roller.lastColor).toBe('#a8442b');
+
+    fixture.destroy();
+    const again = await render();
+    const checked = again.el.querySelector<HTMLInputElement>('input[name="dice-color"]:checked');
+    expect(checked?.getAttribute('aria-label')).toBe('Brick');
+  });
+
+  it('accepts a custom colour', async () => {
+    const { fixture, el } = await render();
+    const custom = el.querySelector<HTMLInputElement>('input[type="color"]')!;
+    custom.value = '#336699';
+    custom.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(el.querySelector('input[name="dice-color"]:checked')).toBeNull();
+    expect(JSON.parse(localStorage.getItem('pendragon-sandbox.dice-tray.v1')!).diceColor).toBe(
+      '#336699',
+    );
   });
 });
