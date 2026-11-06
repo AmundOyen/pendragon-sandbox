@@ -25,12 +25,15 @@ import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmLabel } from '@spartan-ng/helm/label';
 import { HlmSpinner } from '@spartan-ng/helm/spinner';
 import {
+  DEFAULT_DICE_COLOR,
+  DICE_COLORS,
   DIE_SIDES,
   DIE_TYPES,
   type DicePool,
   type DieType,
   emptyPool,
   formatPool,
+  isHexColor,
   MAX_DICE_PER_TYPE,
   poolSize,
   type RollResult,
@@ -49,6 +52,7 @@ interface PersistedState {
   pool: DicePool;
   modifier: number;
   history: RollResult[];
+  diceColor: string;
 }
 
 /**
@@ -77,11 +81,17 @@ export class DiceTrayPage {
   private readonly trayHost = viewChild.required<ElementRef<HTMLElement>>('trayHost');
 
   protected readonly dieTypes = DIE_TYPES;
+  protected readonly diceColors = DICE_COLORS;
 
   protected readonly pool = signal<DicePool>(emptyPool());
   protected readonly modifier = signal(0);
   protected readonly history = signal<RollResult[]>([]);
   protected readonly rolling = signal(false);
+  protected readonly diceColor = signal(DEFAULT_DICE_COLOR);
+  /** True when the colour is not one of the presets (picked with the custom colour input). */
+  protected readonly isCustomColor = computed(
+    () => !DICE_COLORS.some((c) => c.value === this.diceColor()),
+  );
   protected readonly rollerStatus = this.roller.status;
 
   protected readonly diceCount = computed(() => poolSize(this.pool()));
@@ -119,6 +129,14 @@ export class DiceTrayPage {
 
   protected nudgeModifier(delta: number): void {
     this.setModifier(this.modifier() + delta);
+  }
+
+  protected setDiceColor(value: string): void {
+    if (isHexColor(value)) this.diceColor.set(value.toLowerCase());
+  }
+
+  protected onCustomColor(event: Event): void {
+    this.setDiceColor((event.target as HTMLInputElement).value);
   }
 
   protected clearSelection(): void {
@@ -163,7 +181,7 @@ export class DiceTrayPage {
     this.rolling.set(true);
     this.revealTray();
     try {
-      const outcome = await this.roller.roll(pool, modifier);
+      const outcome = await this.roller.roll(pool, modifier, this.diceColor());
       const result: RollResult = { id: this.nextId++, timestamp: Date.now(), ...outcome };
       this.history.update((history) => [result, ...history].slice(0, HISTORY_LIMIT));
     } finally {
@@ -195,6 +213,7 @@ export class DiceTrayPage {
         this.pool.set(pool);
       }
       if (typeof state.modifier === 'number') this.modifier.set(state.modifier);
+      if (isHexColor(state.diceColor)) this.diceColor.set(state.diceColor);
       if (Array.isArray(state.history)) {
         this.history.set(state.history.slice(0, HISTORY_LIMIT));
         this.nextId = Math.max(0, ...state.history.map((r) => r.id)) + 1;
@@ -209,6 +228,7 @@ export class DiceTrayPage {
       pool: this.pool(),
       modifier: this.modifier(),
       history: this.history(),
+      diceColor: this.diceColor(),
     };
     try {
       globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state));

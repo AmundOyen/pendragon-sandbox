@@ -72,3 +72,20 @@ export function formatPool(pool: DicePool, modifier = 0): string {
   if (modifier < 0) text += ` - ${Math.abs(modifier)}`;
   return text;
 }
+
+/** Preset dice colours, drawn from the RpgWorld palette. All read well on the teal felt. */
+export const DICE_COLORS = [
+  { name: 'Parchment', value: '#f5dda0' },
+  { name: 'Ivory', value: '#fdf8ed' },
+  { name: 'Gold', value: '#c9922b' },
+  { name: 'Brick', value: '#a8442b' },
+  { name: 'Umber', value: '#624212' },
+  { name: 'Ebony', value: '#2b2620' },
+] as const;
+
+export const DEFAULT_DICE_COLOR: string = DICE_COLORS[0].value;
+
+/** A `#rrggbb` colour, as produced by `<input type="color">`. */
+export function isHexColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+}

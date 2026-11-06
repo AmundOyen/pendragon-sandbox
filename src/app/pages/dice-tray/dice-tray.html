@@ -49,6 +49,58 @@
           }
         </div>
 
+        <fieldset class="flex flex-col items-center gap-2">
+          <legend class="mb-2 w-full text-center text-sm font-medium">Dice colour</legend>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            @for (c of diceColors; track c.value) {
+              @let selected = diceColor() === c.value;
+              <label
+                class="has-focus-visible:ring-ring relative flex size-8 cursor-pointer items-center justify-center rounded-full border shadow-(--rpg-shadow-sm) has-focus-visible:ring-2 has-focus-visible:ring-offset-2"
+                [class.ring-2]="selected"
+                [class.ring-primary]="selected"
+                [class.ring-offset-2]="selected"
+                [class.ring-offset-background]="selected"
+                [style.background-color]="c.value"
+                [title]="c.name"
+              >
+                <input
+                  type="radio"
+                  name="dice-color"
+                  class="sr-only"
+                  [value]="c.value"
+                  [checked]="selected"
+                  [attr.aria-label]="c.name"
+                  (change)="setDiceColor(c.value)"
+                />
+              </label>
+            }
+            <label
+              class="has-focus-visible:ring-ring relative flex size-8 cursor-pointer items-center justify-center overflow-hidden rounded-full border bg-[conic-gradient(var(--rpg-destructive-500),var(--rpg-primary-400),var(--rpg-secondary-400),var(--rpg-primary-700),var(--rpg-destructive-500))] has-focus-visible:ring-2 has-focus-visible:ring-offset-2"
+              [class.ring-2]="isCustomColor()"
+              [class.ring-primary]="isCustomColor()"
+              [class.ring-offset-2]="isCustomColor()"
+              [class.ring-offset-background]="isCustomColor()"
+              [style.background]="isCustomColor() ? diceColor() : null"
+              title="Custom colour"
+            >
+              <input
+                type="color"
+                class="absolute inset-0 size-full cursor-pointer opacity-0"
+                aria-label="Custom dice colour"
+                [value]="diceColor()"
+                (input)="onCustomColor($event)"
+              />
+            </label>
+          </div>
+          <p class="text-muted-foreground m-0 text-xs">
+            @if (rollerStatus() === 'fallback') {
+              Colours apply to the 3D dice, which this browser can't show.
+            } @else {
+              Applies from the next roll.
+            }
+          </p>
+        </fieldset>
+
         <div class="flex flex-col items-center gap-2">
           <label hlmLabel for="modifier">Modifier</label>
           <div class="flex items-center gap-2">
