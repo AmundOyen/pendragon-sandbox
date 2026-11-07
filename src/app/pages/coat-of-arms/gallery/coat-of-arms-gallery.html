@@ -1,0 +1,75 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-6 p-4 md:p-8">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="font-display text-3xl font-bold">Coat of Arms Gallery</h1>
+      <p class="text-muted-foreground max-w-prose">
+        Your saved coats of arms. Select one to keep editing it in the designer.
+      </p>
+    </div>
+    <a hlmBtn routerLink="/coat-of-arms" class="new-coat">
+      <ng-icon name="lucideFilePlus" />
+      New coat of arms
+    </a>
+  </header>
+
+  @if (error(); as text) {
+    <p
+      class="border-destructive text-destructive flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+      role="alert"
+    >
+      <ng-icon name="lucideCircleAlert" aria-hidden="true" />
+      {{ text }}
+    </p>
+  }
+
+  @if (!loaded()) {
+    <p class="text-muted-foreground text-sm">Loading…</p>
+  } @else if (coats().length === 0) {
+    <div class="flex flex-col items-start gap-3 rounded-lg border border-dashed p-6">
+      <p class="text-muted-foreground text-sm">
+        No saved coats of arms yet. Design one and press Save to keep it here.
+      </p>
+      <a hlmBtn variant="outline" routerLink="/coat-of-arms">
+        <ng-icon name="lucideFilePlus" />
+        Design a coat of arms
+      </a>
+    </div>
+  } @else {
+    <ul class="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4">
+      @for (coat of coats(); track coat.id) {
+        <li
+          class="gallery-item bg-card relative flex flex-col rounded-lg border shadow-(--rpg-shadow-sm)"
+        >
+          <a
+            class="hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-2 rounded-lg p-3 outline-none focus-visible:ring-2"
+            routerLink="/coat-of-arms"
+            [queryParams]="{ coat: coat.id }"
+          >
+            <app-heraldic-shield
+              class="w-28"
+              [coat]="coat"
+              [tinctures]="tinctures()"
+              [label]="displayName(coat)"
+            />
+            <span class="w-full truncate text-center text-sm font-medium">{{
+              displayName(coat)
+            }}</span>
+            <span class="text-muted-foreground text-xs">{{ formatDate(coat.updatedAt) }}</span>
+          </a>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-xs"
+            type="button"
+            class="delete-saved absolute end-1.5 top-1.5"
+            [attr.aria-label]="'Delete ' + displayName(coat)"
+            [title]="'Delete ' + displayName(coat)"
+            (click)="delete(coat)"
+          >
+            <ng-icon name="lucideTrash2" />
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

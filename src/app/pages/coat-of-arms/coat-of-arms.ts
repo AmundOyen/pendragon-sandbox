@@ -2,11 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowDown,
@@ -18,6 +21,7 @@ import {
   lucideFlipHorizontal2,
   lucideFlipVertical2,
   lucideImagePlus,
+  lucideLayoutGrid,
   lucideRotateCcw,
   lucideSave,
   lucideTrash2,
@@ -171,7 +175,16 @@ function chargeName(file: File): string {
  */
 @Component({
   selector: 'app-coat-of-arms',
-  imports: [HlmButton, HlmCardImports, HlmInput, HlmLabel, NgIcon, HeraldicShield, TincturePalette],
+  imports: [
+    HlmButton,
+    HlmCardImports,
+    HlmInput,
+    HlmLabel,
+    NgIcon,
+    RouterLink,
+    HeraldicShield,
+    TincturePalette,
+  ],
   providers: [
     provideIcons({
       lucideArrowDown,
@@ -183,6 +196,7 @@ function chargeName(file: File): string {
       lucideFlipHorizontal2,
       lucideFlipVertical2,
       lucideImagePlus,
+      lucideLayoutGrid,
       lucideRotateCcw,
       lucideSave,
       lucideTrash2,
@@ -194,6 +208,8 @@ function chargeName(file: File): string {
 })
 export class CoatOfArmsPage {
   private readonly db = inject(CoatOfArmsService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly localStorage = inject(CalLocalStorage);
   private readonly editor = viewChild.required<HeraldicShield>('editor');
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
@@ -210,8 +226,6 @@ export class CoatOfArmsPage {
   /** What is being edited; null when nothing is selected. */
   protected readonly selection = signal<Selection | null>(null);
 
-  protected readonly gallery = signal<CoatOfArms[]>([]);
-  protected readonly galleryLoaded = signal(false);
   protected readonly customTinctures = signal<CustomTincture[]>([]);
   protected readonly tinctures = computed(() => tinctureMap(this.customTinctures()));
 
@@ -299,7 +313,11 @@ export class CoatOfArmsPage {
   protected readonly hints = computed(() => tinctureHints(this.coat(), this.tinctures()));
 
   constructor() {
-    void this.load();
+    void this.loadTinctures();
+    // `?coat=<id>` opens a saved coat of arms; no id means a new one.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .subscribe((params) => void this.openFromUrl(params.get('coat')));
   }
 
   // --- Field and ordinary --------------------------------------------------------------
@@ -575,8 +593,8 @@ export class CoatOfArmsPage {
         : await this.db.coats.add({ ...draft, createdAt: now });
       this.coat.set(clone(saved));
       this.snapshot.set(clone(saved));
-      await this.refreshGallery();
-      this.message.set({ kind: 'info', text: `Saved ${displayName(saved)}.` });
+      this.message.set({ kind: 'info', text: `Saved ${displayName(saved)} to the gallery.` });
+      if (!draft.id) await this.setUrlCoat(saved.id);
     } catch {
       this.message.set({
         kind: 'error',
@@ -590,6 +608,16 @@ export class CoatOfArmsPage {
   protected startNew(): void {
     if (this.dirty() && !confirm('Discard your unsaved changes and start a new coat of arms?'))
       return;
+    this.reset();
+    void this.setUrlCoat(null);
+  }
+
+  /** Asked by the route's `canDeactivate` before leaving the designer. */
+  confirmLeave(): boolean {
+    return !this.dirty() || confirm('Leave the designer without saving your changes?');
+  }
+
+  private reset(): void {
     const fresh = newCoat();
     this.coat.set(fresh);
     this.snapshot.set(clone(fresh));
@@ -597,41 +625,42 @@ export class CoatOfArmsPage {
     this.message.set(null);
   }
 
-  protected open(saved: CoatOfArms): void {
-    if (saved.id === this.coat().id && !this.dirty()) return;
-    if (this.dirty() && !confirm(`Discard your unsaved changes and open ${displayName(saved)}?`))
+  /** Show the coat of arms named in the URL, or a new one when there is none. */
+  private async openFromUrl(id: string | null): Promise<void> {
+    const current = this.coat().id ?? null;
+    if (id === current) return;
+    if (this.dirty() && !confirm('Discard your unsaved changes?')) {
+      await this.setUrlCoat(current);
       return;
+    }
+    if (!id) {
+      this.reset();
+      return;
+    }
+    let saved: CoatOfArms | null = null;
+    try {
+      saved = await this.db.coats.get(id);
+    } catch {
+      // Handled as "not found" below.
+    }
+    if (!saved) {
+      this.reset();
+      this.message.set({ kind: 'error', text: 'That coat of arms is not in the gallery.' });
+      await this.setUrlCoat(null);
+      return;
+    }
     this.coat.set(clone(saved));
     this.snapshot.set(clone(saved));
     this.selection.set(null);
     this.message.set(null);
-    globalThis.scrollTo?.({ top: 0, behavior: 'smooth' });
   }
 
-  protected async deleteSaved(saved: CoatOfArms): Promise<void> {
-    if (!confirm(`Delete ${displayName(saved)} from the gallery?`)) return;
-    try {
-      await this.db.coats.delete(saved.id);
-      if (this.coat().id === saved.id) {
-        // Keep it on the designer, as an unsaved coat.
-        this.coat.update(({ id: _id, ...rest }) => rest);
-        this.snapshot.set(newCoat());
-      }
-      await this.refreshGallery();
-    } catch {
-      this.message.set({ kind: 'error', text: 'The coat of arms could not be deleted.' });
-    }
-  }
-
-  protected displayName(coat: Pick<CoatDraft, 'name'>): string {
-    return displayName(coat);
-  }
-
-  protected formatDate(timestamp: number): string {
-    return new Date(timestamp).toLocaleDateString(undefined, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+  /** Keep `?coat=` in step with the coat being edited, without adding a history entry. */
+  private setUrlCoat(id: string | null): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { coat: id },
+      replaceUrl: true,
     });
   }
 
@@ -685,22 +714,14 @@ export class CoatOfArmsPage {
 
   // --- Loading -------------------------------------------------------------------------
 
-  private async load(): Promise<void> {
+  private async loadTinctures(): Promise<void> {
     try {
-      const [, tinctures] = await Promise.all([this.refreshGallery(), this.db.tinctures.read()]);
-      this.customTinctures.set(tinctures);
+      this.customTinctures.set(await this.db.tinctures.read());
     } catch {
       this.message.set({
         kind: 'error',
-        text: 'Saved coats of arms are unavailable: this browser does not allow local storage here.',
+        text: 'Saving is unavailable: this browser does not allow local storage here.',
       });
-    } finally {
-      this.galleryLoaded.set(true);
     }
-  }
-
-  private async refreshGallery(): Promise<void> {
-    const coats = await this.db.coats.read();
-    this.gallery.set([...coats].sort((a, b) => b.updatedAt - a.updatedAt));
   }
 }

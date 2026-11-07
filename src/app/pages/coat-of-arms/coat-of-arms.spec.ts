@@ -1,37 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { routes } from '../../app.routes';
 import { CoatOfArmsPage } from './coat-of-arms';
 import { CoatOfArmsService } from './coat-of-arms.service';
-import type { CoatOfArms } from './heraldry/model';
-import type { CustomTincture } from './heraldry/tinctures';
-
-/** In-memory stand-in for the IndexedDB service (jsdom has no IndexedDB). */
-function memoryStore<T extends { id: string }>() {
-  let items: T[] = [];
-  let next = 1;
-  return {
-    read: async () => structuredClone(items),
-    get: async (id: string) => structuredClone(items.find((i) => i.id === id) ?? null),
-    add: async (item: Omit<T, 'id'>) => {
-      const created = { ...item, id: `id-${next++}` } as T;
-      items.push(structuredClone(created));
-      return created;
-    },
-    update: async (item: T) => {
-      items = items.map((i) => (i.id === item.id ? structuredClone(item) : i));
-      return item;
-    },
-    delete: async (id: string) => {
-      items = items.filter((i) => i.id !== id);
-    },
-    query: async (where: (i: T) => boolean) => items.filter(where),
-    find: async (where: (i: T) => boolean) => items.find(where) ?? null,
-  };
-}
-
-class FakeCoatOfArmsService {
-  coats = memoryStore<CoatOfArms>();
-  tinctures = memoryStore<CustomTincture>();
-}
+import { newCoat } from './heraldry/model';
+import { FakeCoatOfArmsService } from './testing/fake-coat-of-arms.service';
 
 const SVG_CHARGE =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><path d="M0 0h100v50z" fill="#e0a000"/></svg>';
@@ -42,8 +16,7 @@ describe('CoatOfArmsPage', () => {
   beforeEach(async () => {
     service = new FakeCoatOfArmsService();
     await TestBed.configureTestingModule({
-      imports: [CoatOfArmsPage],
-      providers: [{ provide: CoatOfArmsService, useValue: service }],
+      providers: [provideRouter(routes), { provide: CoatOfArmsService, useValue: service }],
     }).compileComponents();
     localStorage.clear();
     vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
@@ -52,10 +25,12 @@ describe('CoatOfArmsPage', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  async function render() {
-    const fixture = TestBed.createComponent(CoatOfArmsPage);
+  async function render(url = '/coat-of-arms') {
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl(url, CoatOfArmsPage);
+    const fixture = harness.fixture;
     await fixture.whenStable();
-    const el = fixture.nativeElement as HTMLElement;
+    const el = harness.routeNativeElement!;
     const stage = () => el.querySelector<SVGSVGElement>('.stage svg')!;
     const click = async (selector: string, root: ParentNode = el) => {
       const target = root.querySelector(selector) as HTMLElement | SVGElement | null;
@@ -79,7 +54,8 @@ describe('CoatOfArmsPage', () => {
       pickTincture,
       selectField,
       title,
-      page: fixture.componentInstance,
+      page,
+      harness,
     };
   }
 
@@ -134,8 +110,8 @@ describe('CoatOfArmsPage', () => {
 
     await selectField();
     expect(title()).toBe('Field');
-    // The page around the designer.
-    await click('#gallery-title');
+    // The page around the designer (its title).
+    await click('h1');
     expect(title()).toBe('Nothing selected');
   });
 
@@ -215,7 +191,7 @@ describe('CoatOfArmsPage', () => {
   });
 
   it('collapses the ordinary groups and remembers which are open', async () => {
-    const { fixture, el } = await render();
+    const { fixture, el, harness } = await render();
     const group = (category: string) =>
       el.querySelector<HTMLDetailsElement>(`.ordinary-group[data-category="${category}"]`)!;
     expect(group('honourable').open).toBe(true);
@@ -227,9 +203,14 @@ describe('CoatOfArmsPage', () => {
     group('honourable').dispatchEvent(new Event('toggle'));
     await fixture.whenStable();
 
-    const again = await render();
+    // Leave the designer and come back: a fresh page reads the remembered groups.
+    await harness.navigateByUrl('/');
+    await harness.navigateByUrl('/coat-of-arms', CoatOfArmsPage);
+    await fixture.whenStable();
     const groupAgain = (category: string) =>
-      again.el.querySelector<HTMLDetailsElement>(`.ordinary-group[data-category="${category}"]`)!;
+      harness.routeNativeElement!.querySelector<HTMLDetailsElement>(
+        `.ordinary-group[data-category="${category}"]`,
+      )!;
     expect(groupAgain('division').open).toBe(true);
     expect(groupAgain('honourable').open).toBe(false);
   });
@@ -248,7 +229,7 @@ describe('CoatOfArmsPage', () => {
     expect(el.querySelector('[role="alert"]')!.textContent).toContain('notes.txt');
   });
 
-  it('saves to the gallery and opens a saved coat of arms again', async () => {
+  it('saves, puts the coat in the URL and can start a new one', async () => {
     const { fixture, el, stage, click, pickTincture, selectField, page } = await render();
     const name = el.querySelector<HTMLInputElement>('.coat-name')!;
     name.value = 'Sir Bors';
@@ -258,17 +239,45 @@ describe('CoatOfArmsPage', () => {
     await page.save();
     await fixture.whenStable();
 
-    expect(await service.coats.read()).toHaveLength(1);
-    expect(el.querySelectorAll('.gallery-item').length).toBe(1);
-    expect(el.querySelector('.gallery-item')!.textContent).toContain('Sir Bors');
+    const [saved] = await service.coats.read();
+    expect(saved.name).toBe('Sir Bors');
+    expect(TestBed.inject(Router).url).toBe(`/coat-of-arms?coat=${saved.id}`);
     expect(el.querySelector('.save-button')!.textContent).toContain('Saved');
+    expect(el.textContent).not.toContain('Your coats of arms');
 
-    await click('button', el.querySelector('header')!); // New
+    await click('.new-button');
+    expect(TestBed.inject(Router).url).toBe('/coat-of-arms');
     expect(el.querySelector<HTMLInputElement>('.coat-name')!.value).toBe('');
+    expect(stage().querySelector('.field')!.getAttribute('fill')).toBe('#1f4fa8');
+  });
 
-    await click('.gallery-item button');
-    expect(el.querySelector<HTMLInputElement>('.coat-name')!.value).toBe('Sir Bors');
-    expect(stage().querySelector('.field')!.getAttribute('fill')).toBe('#f2c318');
+  it('opens the saved coat of arms named in the URL', async () => {
+    const saved = await service.coats.add({ ...newCoat(1), name: 'Sir Kay', field: 'sable' });
+    const { el, stage } = await render(`/coat-of-arms?coat=${saved.id}`);
+    expect(el.querySelector<HTMLInputElement>('.coat-name')!.value).toBe('Sir Kay');
+    expect(stage().querySelector('.field')!.getAttribute('fill')).toBe('#141414');
+    expect(el.querySelector('.save-button')!.textContent).toContain('Saved');
+  });
+
+  it('says so when the coat of arms in the URL is gone', async () => {
+    const { el } = await render('/coat-of-arms?coat=missing');
+    expect(el.querySelector('[role="alert"]')!.textContent).toContain('not in the gallery');
+    expect(TestBed.inject(Router).url).toBe('/coat-of-arms');
+  });
+
+  it('links to the gallery and asks before leaving with unsaved changes', async () => {
+    const { fixture, harness, selectField, pickTincture } = await render();
+    await selectField();
+    await pickTincture('vert');
+    vi.mocked(confirm).mockReturnValue(false);
+    await harness.navigateByUrl('/coat-of-arms/gallery');
+    await fixture.whenStable();
+    expect(confirm).toHaveBeenCalled();
+    expect(TestBed.inject(Router).url).toBe('/coat-of-arms');
+
+    vi.mocked(confirm).mockReturnValue(true);
+    const link = harness.routeNativeElement!.querySelector<HTMLAnchorElement>('.gallery-link')!;
+    expect(link.getAttribute('href')).toBe('/coat-of-arms/gallery');
   });
 
   it('creates a custom tincture shared through the service', async () => {
