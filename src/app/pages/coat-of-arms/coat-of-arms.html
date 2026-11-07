@@ -8,7 +8,11 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <button hlmBtn variant="outline" type="button" (click)="startNew()">
+      <a hlmBtn variant="outline" routerLink="/coat-of-arms/gallery" class="gallery-link">
+        <ng-icon name="lucideLayoutGrid" />
+        Gallery
+      </a>
+      <button hlmBtn variant="outline" type="button" class="new-button" (click)="startNew()">
         <ng-icon name="lucideFilePlus" />
         New
       </button>
@@ -510,58 +514,4 @@
       </section>
     </div>
   </div>
-
-  <!-- Gallery -->
-  <section aria-labelledby="gallery-title" class="flex flex-col gap-4">
-    <h2 id="gallery-title" class="font-display text-2xl font-semibold">Your coats of arms</h2>
-    @if (!galleryLoaded()) {
-      <p class="text-muted-foreground text-sm">Loading…</p>
-    } @else if (gallery().length === 0) {
-      <p class="text-muted-foreground text-sm">
-        Saved coats of arms appear here. Select one to keep editing it.
-      </p>
-    } @else {
-      <ul class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-4">
-        @for (saved of gallery(); track saved.id) {
-          @let current = saved.id === coat().id;
-          <li
-            class="gallery-item group bg-card relative flex flex-col rounded-lg border shadow-(--rpg-shadow-sm)"
-            [class.border-primary]="current"
-            [class.ring-2]="current"
-            [class.ring-primary]="current"
-          >
-            <button
-              type="button"
-              class="hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-2 rounded-lg p-3 outline-none focus-visible:ring-2"
-              [attr.aria-current]="current ? 'true' : null"
-              (click)="open(saved)"
-            >
-              <app-heraldic-shield
-                class="w-24"
-                [coat]="saved"
-                [tinctures]="tinctures()"
-                [label]="displayName(saved)"
-              />
-              <span class="w-full truncate text-center text-sm font-medium">{{
-                displayName(saved)
-              }}</span>
-              <span class="text-muted-foreground text-xs">{{ formatDate(saved.updatedAt) }}</span>
-            </button>
-            <button
-              hlmBtn
-              variant="ghost"
-              size="icon-xs"
-              type="button"
-              class="delete-saved absolute end-1.5 top-1.5"
-              [attr.aria-label]="'Delete ' + displayName(saved)"
-              [title]="'Delete ' + displayName(saved)"
-              (click)="deleteSaved(saved)"
-            >
-              <ng-icon name="lucideTrash2" />
-            </button>
-          </li>
-        }
-      </ul>
-    }
-  </section>
 </section>

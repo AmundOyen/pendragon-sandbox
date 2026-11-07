@@ -20,6 +20,15 @@ export const routes: Routes = [
     path: 'coat-of-arms',
     title: 'Coat of Arms · Pendragon Sandbox',
     loadComponent: () => import('./pages/coat-of-arms/coat-of-arms').then((m) => m.CoatOfArmsPage),
+    canDeactivate: [(page: { confirmLeave(): boolean }) => page.confirmLeave()],
+  },
+  {
+    path: 'coat-of-arms/gallery',
+    title: 'Coat of Arms Gallery · Pendragon Sandbox',
+    loadComponent: () =>
+      import('./pages/coat-of-arms/gallery/coat-of-arms-gallery').then(
+        (m) => m.CoatOfArmsGalleryPage,
+      ),
   },
   { path: '**', redirectTo: '' },
 ];
