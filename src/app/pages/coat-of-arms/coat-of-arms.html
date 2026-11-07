@@ -1,0 +1,507 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-6 p-4 md:p-8">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="font-display text-3xl font-bold">Coat of Arms</h1>
+      <p class="text-muted-foreground max-w-prose">
+        Choose a field, an ordinary and your charges, then save your arms to the gallery or export
+        them for the character sheet.
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button hlmBtn variant="outline" type="button" (click)="startNew()">
+        <ng-icon name="lucideFilePlus" />
+        New
+      </button>
+      <button hlmBtn variant="outline" type="button" class="export-svg" (click)="exportSvg()">
+        <ng-icon name="lucideDownload" />
+        SVG
+      </button>
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        class="export-png"
+        [disabled]="exporting()"
+        (click)="exportPng()"
+      >
+        <ng-icon name="lucideDownload" />
+        PNG
+      </button>
+      <button
+        hlmBtn
+        type="button"
+        class="save-button"
+        [disabled]="saving() || (isSaved() && !dirty())"
+        (click)="save()"
+      >
+        <ng-icon name="lucideSave" />
+        {{ isSaved() && !dirty() ? 'Saved' : 'Save' }}
+      </button>
+    </div>
+  </header>
+
+  @if (message(); as m) {
+    <p
+      class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+      [class.border-destructive]="m.kind === 'error'"
+      [class.text-destructive]="m.kind === 'error'"
+      [attr.role]="m.kind === 'error' ? 'alert' : 'status'"
+    >
+      @if (m.kind === 'error') {
+        <ng-icon name="lucideCircleAlert" aria-hidden="true" />
+      }
+      {{ m.text }}
+    </p>
+  }
+
+  <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+    <!-- Stage -->
+    <section hlmCard aria-labelledby="stage-title" class="lg:sticky lg:top-20">
+      <div hlmCardHeader class="flex flex-col gap-2">
+        <h2 hlmCardTitle id="stage-title" class="sr-only">Designer</h2>
+        <label hlmLabel for="coat-name">Name</label>
+        <input
+          hlmInput
+          id="coat-name"
+          class="coat-name"
+          maxlength="80"
+          autocomplete="off"
+          placeholder="Untitled arms"
+          [value]="coat().name"
+          (input)="setName($event)"
+        />
+      </div>
+      <div hlmCardContent class="flex flex-col items-center gap-4">
+        <div
+          class="stage relative w-full max-w-md rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          tabindex="0"
+          aria-label="Shield. Click a part to tincture it. With a charge selected, arrow keys move it and Delete removes it."
+          (keydown)="onStageKeydown($event)"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+        >
+          <app-heraldic-shield
+            #editor
+            [coat]="coat()"
+            [tinctures]="tinctures()"
+            [selection]="selection()"
+            [editable]="true"
+            [label]="title()"
+            (selectTarget)="select($event)"
+            (chargeChange)="updateCharge($event)"
+          />
+          @if (dropping()) {
+            <div
+              class="border-primary bg-background/80 pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-lg font-medium"
+            >
+              <ng-icon name="lucideUpload" class="text-3xl" aria-hidden="true" />
+              Drop to add a charge
+            </div>
+          }
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <button
+            hlmBtn
+            variant="secondary"
+            type="button"
+            class="add-charge"
+            (click)="openFilePicker()"
+          >
+            <ng-icon name="lucideImagePlus" />
+            Add charge
+          </button>
+          <span class="text-muted-foreground text-sm">or drop image files on the shield</span>
+          <input
+            #fileInput
+            type="file"
+            class="sr-only"
+            tabindex="-1"
+            aria-hidden="true"
+            multiple
+            [accept]="acceptedTypes"
+            (change)="onFileInput($event)"
+          />
+        </div>
+
+        @if (hints().length) {
+          <section
+            class="hints w-full max-w-md rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+          >
+            <h3 class="mb-1 flex items-center gap-1.5 font-medium">
+              <ng-icon name="lucideCircleAlert" aria-hidden="true" />
+              Rule of tincture
+            </h3>
+            <p class="text-muted-foreground mb-2">
+              Metal goes on colour and colour on metal, so the shield reads at a distance. Furs sit
+              on anything. This is a hint, not a rule you have to follow.
+            </p>
+            <ul class="flex flex-col gap-1">
+              @for (hint of hints(); track $index) {
+                <li>
+                  <button
+                    type="button"
+                    class="text-left underline-offset-4 hover:underline"
+                    (click)="select(hint.selection)"
+                  >
+                    <span class="font-medium">{{ hint.subject }}:</span> {{ hint.message }}
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    </section>
+
+    <div class="flex flex-col gap-6">
+      <!-- Tincture of the selected target -->
+      <section hlmCard aria-labelledby="target-title">
+        <div hlmCardHeader>
+          <h2 hlmCardTitle id="target-title" class="target-title">{{ target().title }}</h2>
+          <p hlmCardDescription>{{ target().hint }}</p>
+        </div>
+        <div hlmCardContent class="flex flex-col gap-4">
+          @let t = target();
+          @if (t.kind === 'part' && t.deleted) {
+            <p class="text-muted-foreground text-sm">
+              This part is deleted; the field shows through.
+            </p>
+            <button
+              hlmBtn
+              variant="outline"
+              size="sm"
+              type="button"
+              class="self-start"
+              (click)="restorePart(t.index)"
+            >
+              <ng-icon name="lucideRotateCcw" />
+              Restore part
+            </button>
+          } @else if (t.kind === 'charge' && t.charge.kind === 'raster') {
+            <!-- Raster charges keep their colours. -->
+          } @else {
+            <app-tincture-palette
+              [tinctures]="tinctures()"
+              [custom]="customTinctures()"
+              [selected]="t.tincture"
+              [allowOwnColours]="t.kind === 'charge'"
+              [label]="'Tincture of ' + t.title"
+              (pick)="pickTincture($event)"
+              (createCustom)="createTincture($event)"
+              (deleteCustom)="deleteTincture($event)"
+            />
+          }
+
+          @if (t.kind === 'part' && !t.deleted) {
+            <button
+              hlmBtn
+              variant="destructive"
+              size="sm"
+              type="button"
+              class="delete-part self-start"
+              (click)="deletePart(t.index)"
+            >
+              <ng-icon name="lucideTrash2" />
+              Delete part
+            </button>
+          }
+          @if (t.kind === 'charge') {
+            <div class="flex flex-wrap gap-2">
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                type="button"
+                [disabled]="isLast(t.charge)"
+                (click)="moveChargeLayer(t.charge.id, 1)"
+              >
+                <ng-icon name="lucideArrowUp" />
+                Bring forward
+              </button>
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                type="button"
+                [disabled]="isFirst(t.charge)"
+                (click)="moveChargeLayer(t.charge.id, -1)"
+              >
+                <ng-icon name="lucideArrowDown" />
+                Send backward
+              </button>
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                type="button"
+                (click)="resetChargeTransform(t.charge)"
+              >
+                <ng-icon name="lucideRotateCcw" />
+                Reset position
+              </button>
+              <button
+                hlmBtn
+                variant="destructive"
+                size="sm"
+                type="button"
+                class="delete-charge"
+                (click)="deleteCharge(t.charge.id)"
+              >
+                <ng-icon name="lucideTrash2" />
+                Delete charge
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Ordinary -->
+      <section hlmCard aria-labelledby="ordinary-title">
+        <div hlmCardHeader class="flex flex-row items-start justify-between gap-2">
+          <div class="flex flex-col gap-1">
+            <h2 hlmCardTitle id="ordinary-title">Ordinary</h2>
+            <p hlmCardDescription>
+              {{ ordinary()?.def?.description ?? 'A plain field, with no ordinary.' }}
+            </p>
+          </div>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="sm"
+            type="button"
+            class="no-ordinary"
+            [disabled]="!ordinary()"
+            (click)="chooseOrdinary(null)"
+          >
+            None
+          </button>
+        </div>
+        <div hlmCardContent class="flex flex-col gap-5">
+          @for (group of ordinaryGroups; track group.category) {
+            <div class="flex flex-col gap-2">
+              <h3 class="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                {{ group.label }}
+              </h3>
+              <div class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2">
+                @for (item of group.items; track item.def.id) {
+                  @let chosen = ordinary()?.def?.id === item.def.id;
+                  <button
+                    type="button"
+                    class="ordinary-option hover:bg-muted focus-visible:ring-ring flex flex-col items-center gap-1 rounded-md border p-1.5 text-center text-xs leading-tight outline-none focus-visible:ring-2"
+                    [class.border-primary]="chosen"
+                    [class.bg-muted]="chosen"
+                    [attr.aria-pressed]="chosen"
+                    [attr.data-ordinary]="item.def.id"
+                    [title]="item.def.name + ' — ' + item.def.description"
+                    (click)="chooseOrdinary(item.def.id)"
+                  >
+                    <app-heraldic-shield
+                      class="w-10"
+                      [coat]="item.coat"
+                      [tinctures]="tinctures()"
+                      [label]="item.def.name"
+                      aria-hidden="true"
+                    />
+                    {{ item.def.name }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (ordinary(); as o) {
+            @if (o.def.lines) {
+              <fieldset class="flex flex-col gap-2">
+                <legend
+                  class="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase"
+                >
+                  Line of partition
+                </legend>
+                <div class="grid grid-cols-3 gap-2">
+                  @for (line of lines; track line.id) {
+                    @let lineChosen = o.layer.line === line.id;
+                    <label
+                      class="line-option hover:bg-muted has-focus-visible:ring-ring flex cursor-pointer flex-col items-center gap-1 rounded-md border p-1.5 text-xs has-focus-visible:ring-2"
+                      [class.border-primary]="lineChosen"
+                      [class.bg-muted]="lineChosen"
+                      [title]="line.name + ' — ' + line.description"
+                    >
+                      <input
+                        type="radio"
+                        name="line-of-partition"
+                        class="sr-only"
+                        [value]="line.id"
+                        [checked]="lineChosen"
+                        (change)="setLine(line.id)"
+                      />
+                      <svg
+                        viewBox="0 0 120 48"
+                        class="text-foreground h-6 w-full"
+                        aria-hidden="true"
+                      >
+                        <path [attr.d]="line.d" fill="currentColor" />
+                      </svg>
+                      {{ line.name }}
+                    </label>
+                  }
+                </div>
+              </fieldset>
+            }
+
+            <div class="flex flex-col gap-2">
+              <h3 class="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Parts
+              </h3>
+              <ul class="flex flex-wrap gap-2">
+                @for (part of parts(); track part.index) {
+                  @let partSelected =
+                    selection().kind === 'part' && $any(selection()).index === part.index;
+                  <li>
+                    <button
+                      type="button"
+                      class="part-chip hover:bg-muted focus-visible:ring-ring flex items-center gap-1.5 rounded-full border py-1 ps-1 pe-2.5 text-xs outline-none focus-visible:ring-2"
+                      [class.border-primary]="partSelected"
+                      [class.bg-muted]="partSelected"
+                      [class.line-through]="!part.tincture"
+                      [class.text-muted-foreground]="!part.tincture"
+                      (click)="select({ kind: 'part', index: part.index })"
+                    >
+                      <span
+                        class="size-4 rounded-full border border-black/25"
+                        [style.background-color]="part.tincture?.color ?? 'transparent'"
+                        aria-hidden="true"
+                      ></span>
+                      {{ part.name }}
+                      <span class="sr-only">{{
+                        part.tincture ? ', ' + part.tincture.name : ', deleted'
+                      }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Charges -->
+      <section hlmCard aria-labelledby="charges-title">
+        <div hlmCardHeader class="flex flex-row items-start justify-between gap-2">
+          <div class="flex flex-col gap-1">
+            <h2 hlmCardTitle id="charges-title">Charges</h2>
+            <p hlmCardDescription>Beasts, objects and symbols, from your own image files.</p>
+          </div>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            aria-label="Add charge"
+            title="Add charge"
+            (click)="openFilePicker()"
+          >
+            <ng-icon name="lucideImagePlus" />
+          </button>
+        </div>
+        <div hlmCardContent>
+          @if (coat().charges.length) {
+            <ul class="flex flex-col gap-1">
+              @for (charge of coat().charges.slice().reverse(); track charge.id) {
+                @let chargeSelected = selectedCharge()?.id === charge.id;
+                <li>
+                  <button
+                    type="button"
+                    class="charge-row hover:bg-muted focus-visible:ring-ring flex w-full items-center gap-3 rounded-md border p-1.5 text-start text-sm outline-none focus-visible:ring-2"
+                    [class.border-primary]="chargeSelected"
+                    [class.bg-muted]="chargeSelected"
+                    [class.border-transparent]="!chargeSelected"
+                    (click)="select({ kind: 'charge', id: charge.id })"
+                  >
+                    <img
+                      [src]="charge.src"
+                      alt=""
+                      class="bg-muted size-9 rounded object-contain p-0.5"
+                    />
+                    <span class="flex min-w-0 flex-col">
+                      <span class="truncate font-medium">{{ charge.name }}</span>
+                      <span class="text-muted-foreground text-xs">
+                        {{
+                          charge.kind === 'svg'
+                            ? charge.tincture
+                              ? (tinctures().get(charge.tincture)?.name ?? 'Unknown')
+                              : 'Own colours'
+                            : 'Image'
+                        }}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="text-muted-foreground text-sm">
+              No charges yet. Add an SVG to recolour it with a tincture, or a PNG/JPEG to keep its
+              colours.
+            </p>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <section aria-labelledby="gallery-title" class="flex flex-col gap-4">
+    <h2 id="gallery-title" class="font-display text-2xl font-semibold">Your coats of arms</h2>
+    @if (!galleryLoaded()) {
+      <p class="text-muted-foreground text-sm">Loading…</p>
+    } @else if (gallery().length === 0) {
+      <p class="text-muted-foreground text-sm">
+        Saved coats of arms appear here. Select one to keep editing it.
+      </p>
+    } @else {
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-4">
+        @for (saved of gallery(); track saved.id) {
+          @let current = saved.id === coat().id;
+          <li
+            class="gallery-item group bg-card relative flex flex-col rounded-lg border shadow-(--rpg-shadow-sm)"
+            [class.border-primary]="current"
+            [class.ring-2]="current"
+            [class.ring-primary]="current"
+          >
+            <button
+              type="button"
+              class="hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-2 rounded-lg p-3 outline-none focus-visible:ring-2"
+              [attr.aria-current]="current ? 'true' : null"
+              (click)="open(saved)"
+            >
+              <app-heraldic-shield
+                class="w-24"
+                [coat]="saved"
+                [tinctures]="tinctures()"
+                [label]="displayName(saved)"
+              />
+              <span class="w-full truncate text-center text-sm font-medium">{{
+                displayName(saved)
+              }}</span>
+              <span class="text-muted-foreground text-xs">{{ formatDate(saved.updatedAt) }}</span>
+            </button>
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-xs"
+              type="button"
+              class="delete-saved absolute end-1.5 top-1.5"
+              [attr.aria-label]="'Delete ' + displayName(saved)"
+              [title]="'Delete ' + displayName(saved)"
+              (click)="deleteSaved(saved)"
+            >
+              <ng-icon name="lucideTrash2" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</section>

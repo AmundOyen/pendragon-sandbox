@@ -1,0 +1,166 @@
+<svg
+  #svg
+  xmlns="http://www.w3.org/2000/svg"
+  [attr.viewBox]="viewBox"
+  role="img"
+  [attr.aria-label]="label()"
+  class="block h-auto w-full select-none"
+  [class.touch-none]="editable()"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerUp($event)"
+>
+  <defs>
+    <clipPath [attr.id]="uid + '-clip'">
+      <path [attr.d]="shieldPath" />
+    </clipPath>
+    @for (fur of furs(); track fur.id) {
+      <pattern
+        [attr.id]="uid + '-fur-' + fur.id"
+        patternUnits="userSpaceOnUse"
+        [attr.width]="fur.width"
+        [attr.height]="fur.height"
+      >
+        <rect [attr.width]="fur.width" [attr.height]="fur.height" [attr.fill]="fur.ground" />
+        @for (d of fur.paths; track $index) {
+          <path [attr.d]="d" [attr.fill]="fur.spots" />
+        }
+      </pattern>
+    }
+  </defs>
+
+  <g [attr.clip-path]="'url(#' + uid + '-clip)'">
+    <path
+      class="field"
+      [attr.d]="shieldPath"
+      [attr.fill]="fill(coat().field)"
+      [class.cursor-pointer]="editable()"
+      (click)="pick({ kind: 'field' })"
+    />
+    @for (part of visibleParts(); track part.index) {
+      <path
+        class="part"
+        [attr.data-part]="part.index"
+        [attr.d]="part.d"
+        [attr.fill-rule]="part.fillRule"
+        [attr.fill]="fill(part.tincture)"
+        [class.cursor-pointer]="editable()"
+        (click)="pick({ kind: 'part', index: part.index })"
+      />
+    }
+    @for (view of charges(); track view.charge.id) {
+      <image
+        class="charge"
+        [attr.data-charge]="view.charge.id"
+        [attr.href]="view.href"
+        [attr.x]="-view.charge.width / 2"
+        [attr.y]="-view.charge.height / 2"
+        [attr.width]="view.charge.width"
+        [attr.height]="view.charge.height"
+        [attr.transform]="view.transform"
+        preserveAspectRatio="none"
+        [class.cursor-move]="editable()"
+        (pointerdown)="onChargePointerDown($event, view.charge)"
+      />
+    }
+  </g>
+
+  <path
+    [attr.d]="shieldPath"
+    fill="none"
+    stroke="#2b2118"
+    stroke-width="5"
+    stroke-linejoin="round"
+    pointer-events="none"
+  />
+
+  @if (editable()) {
+    <g data-ui pointer-events="none">
+      @if (fieldSelected()) {
+        <path [attr.d]="shieldPath" fill="none" stroke="#ffffff" stroke-width="7" opacity="0.8" />
+        <path
+          [attr.d]="shieldPath"
+          fill="none"
+          class="stroke-primary"
+          stroke-width="3.5"
+          stroke-dasharray="10 7"
+        />
+      }
+      @if (selectedPart(); as part) {
+        <g [attr.clip-path]="'url(#' + uid + '-clip)'">
+          <path
+            [attr.d]="part.d"
+            [attr.fill-rule]="part.fillRule"
+            fill="none"
+            stroke="#ffffff"
+            stroke-width="6"
+            opacity="0.8"
+          />
+          <path
+            [attr.d]="part.d"
+            [attr.fill-rule]="part.fillRule"
+            fill="none"
+            class="stroke-primary"
+            stroke-width="3"
+            stroke-dasharray="10 7"
+          />
+        </g>
+      }
+    </g>
+    @if (selectedCharge(); as view) {
+      <g data-ui [attr.transform]="view.transform">
+        <rect
+          [attr.x]="-view.charge.width / 2"
+          [attr.y]="-view.charge.height / 2"
+          [attr.width]="view.charge.width"
+          [attr.height]="view.charge.height"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="4"
+          opacity="0.8"
+          pointer-events="none"
+        />
+        <rect
+          [attr.x]="-view.charge.width / 2"
+          [attr.y]="-view.charge.height / 2"
+          [attr.width]="view.charge.width"
+          [attr.height]="view.charge.height"
+          fill="none"
+          class="stroke-primary"
+          stroke-width="2"
+          stroke-dasharray="8 5"
+          pointer-events="none"
+        />
+        <line
+          x1="0"
+          [attr.y1]="-view.charge.height / 2"
+          x2="0"
+          [attr.y2]="-view.charge.height / 2 - rotateOffset"
+          class="stroke-primary"
+          stroke-width="2"
+          pointer-events="none"
+        />
+        @for (corner of corners(view.charge); track $index) {
+          <circle
+            class="resize-handle fill-background stroke-primary"
+            [class.cursor-nwse-resize]="$index % 2 === 0"
+            [class.cursor-nesw-resize]="$index % 2 === 1"
+            [attr.cx]="corner[0]"
+            [attr.cy]="corner[1]"
+            r="8"
+            stroke-width="3"
+            (pointerdown)="onHandlePointerDown($event, 'resize', view.charge)"
+          />
+        }
+        <circle
+          class="rotate-handle fill-primary stroke-background cursor-grab"
+          cx="0"
+          [attr.cy]="-view.charge.height / 2 - rotateOffset"
+          r="9"
+          stroke-width="3"
+          (pointerdown)="onHandlePointerDown($event, 'rotate', view.charge)"
+        />
+      </g>
+    }
+  }
+</svg>

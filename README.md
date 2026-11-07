@@ -50,6 +50,18 @@ convention), set by `ThemeService` and by a small inline script in
 
 `/dice` is ported from [AmundOyen/dice-tray](https://github.com/AmundOyen/dice-tray) and restyled with Spartan and the RpgWorld tokens. The 3D tray uses [@3d-dice/dice-box](https://www.npmjs.com/package/@3d-dice/dice-box) (MIT), which runs its physics in a web worker. Its models, textures and physics engine are copied from `node_modules/@3d-dice/dice-box/dist/assets` to `assets/dice-box/` by the build (see `angular.json`). The engine loads only when the page opens, and it is kept for the rest of the session: coming back to the page moves its canvas instead of starting a second engine. Without WebGL it falls back to plain random rolls. The dice colour (six presets from the RpgWorld palette, or any custom colour) is passed with each roll. The selection, dice colour and roll history are kept in local storage.
 
+### Coat of Arms
+
+`/coat-of-arms` is a coat of arms designer, built from the *Heraldry in Arthurian Literature* primer. A coat is drawn in three layers on the shield (viewBox `0 0 358 413`):
+
+- **Field**: any tincture: the metals, colours, stains and furs (ermine, ermines, erminois, pean, vair), or a custom tincture. Custom tinctures count as a metal or a colour, and every coat of arms shares them.
+- **Ordinary**: an honourable ordinary (and diminutives), a sub-ordinary, a divided field or a pattern, with any line of partition (engrailed, invected, wavy, indented, dancetty, embattled, raguly, nebuly). Each part can be clicked to tincture or delete it. Repeating patterns (chequy, barry…) have two parts, the alternating tinctures.
+- **Charges**: image files dropped on the shield or picked with *Add charge*. Drag a charge to move it, and use the corner handles to resize it and the top handle to rotate it (Shift snaps to 15°). Arrow keys nudge it and Delete removes it. Each SVG charge can take a tincture: coloured fills are replaced and black outlines and white details are kept, while a black silhouette is filled whole. PNG, JPEG, WebP and GIF charges keep their colours.
+
+A rule-of-tincture hint appears when metal lies on metal or colour on colour. It never blocks a design. Coats are saved to a gallery and can be exported as SVG or PNG (1024 px wide, transparent background).
+
+The geometry lives in `pages/coat-of-arms/heraldry/` (plain TypeScript, unit tested): `ordinaries.ts` builds every ordinary as polygons that are clipped to the shield, and `lines.ts` decorates any edge with a line of partition. Storage is `CoatOfArmsService`, which extends `ClientDB` with two IndexedDB stores: `coats` and `tinctures`.
+
 ### Icons
 
 [RPG Awesome](https://nagoshiashumari.github.io/Rpg-Awesome/) (`rpg-awesome`, font SIL OFL 1.1 / CSS MIT) is loaded globally via `angular.json`. Use it as `<i class="ra ra-tower" aria-hidden="true"></i>`; the sidebar navigation takes the class name in `navItems` (`icon: 'ra-tower'`). UI icons such as the theme toggle use Lucide through `@ng-icons/lucide`.
