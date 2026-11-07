@@ -16,6 +16,7 @@ import {
   lucideArrowUp,
   lucideChevronDown,
   lucideCircleAlert,
+  lucideCopy,
   lucideDownload,
   lucideFilePlus,
   lucideFlipHorizontal2,
@@ -44,6 +45,7 @@ import {
   type CoatOfArms,
   defaultTinctures,
   displayName,
+  duplicateCoat,
   newCoat,
   placeCharge,
   type Selection,
@@ -191,6 +193,7 @@ function chargeName(file: File): string {
       lucideArrowUp,
       lucideChevronDown,
       lucideCircleAlert,
+      lucideCopy,
       lucideDownload,
       lucideFilePlus,
       lucideFlipHorizontal2,
@@ -600,6 +603,35 @@ export class CoatOfArmsPage {
         kind: 'error',
         text: 'The coat of arms could not be saved in this browser.',
       });
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /**
+   * Save a copy of the coat being edited, with any unsaved changes, and open the copy. The
+   * original keeps what it was last saved with.
+   */
+  async duplicate(): Promise<void> {
+    const original = this.coat();
+    if (!original.id || this.saving()) return;
+    const hadChanges = this.dirty();
+    this.saving.set(true);
+    try {
+      const names = (await this.db.coats.read()).map((c) => c.name);
+      const copy = await this.db.coats.add(duplicateCoat(original, names));
+      this.coat.set(clone(copy));
+      this.snapshot.set(clone(copy));
+      this.selection.set(null);
+      this.message.set({
+        kind: 'info',
+        text: hadChanges
+          ? `Saved a copy as ${copy.name}, with your unsaved changes; the original is as it was last saved. You are now editing the copy.`
+          : `Saved a copy as ${copy.name}. You are now editing the copy.`,
+      });
+      await this.setUrlCoat(copy.id);
+    } catch {
+      this.message.set({ kind: 'error', text: 'The coat of arms could not be duplicated.' });
     } finally {
       this.saving.set(false);
     }

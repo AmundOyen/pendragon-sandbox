@@ -259,6 +259,33 @@ describe('CoatOfArmsPage', () => {
     expect(el.querySelector('.save-button')!.textContent).toContain('Saved');
   });
 
+  it('duplicates a saved coat of arms with its unsaved changes and opens the copy', async () => {
+    const saved = await service.coats.add({ ...newCoat(1), name: 'Sir Kay', field: 'sable' });
+    const { fixture, el, page, selectField, pickTincture, title } = await render(
+      `/coat-of-arms?coat=${saved.id}`,
+    );
+    await selectField();
+    await pickTincture('vert');
+    expect(title()).toBe('Field');
+
+    await page.duplicate();
+    await fixture.whenStable();
+
+    const all = await service.coats.read();
+    const copy = all.find((c) => c.name === 'Sir Kay (copy)')!;
+    expect(copy.field).toBe('vert');
+    expect(all.find((c) => c.id === saved.id)!.field).toBe('sable');
+    expect(TestBed.inject(Router).url).toBe(`/coat-of-arms?coat=${copy.id}`);
+    expect(el.querySelector<HTMLInputElement>('.coat-name')!.value).toBe('Sir Kay (copy)');
+    expect(el.querySelector('.save-button')!.textContent).toContain('Saved');
+    expect(el.querySelector('[role="status"]')!.textContent).toContain('the original is as it');
+  });
+
+  it('only duplicates a coat of arms that has been saved', async () => {
+    const { el } = await render();
+    expect(el.querySelector<HTMLButtonElement>('.duplicate-button')!.disabled).toBe(true);
+  });
+
   it('says so when the coat of arms in the URL is gone', async () => {
     const { el } = await render('/coat-of-arms?coat=missing');
     expect(el.querySelector('[role="alert"]')!.textContent).toContain('not in the gallery');

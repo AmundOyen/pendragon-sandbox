@@ -16,6 +16,18 @@
         <ng-icon name="lucideFilePlus" />
         New
       </button>
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        class="duplicate-button"
+        [disabled]="!isSaved() || saving()"
+        [title]="isSaved() ? 'Save a copy and open it' : 'Save this coat of arms first'"
+        (click)="duplicate()"
+      >
+        <ng-icon name="lucideCopy" />
+        Duplicate
+      </button>
       <button hlmBtn variant="outline" type="button" class="export-svg" (click)="exportSvg()">
         <ng-icon name="lucideDownload" />
         SVG

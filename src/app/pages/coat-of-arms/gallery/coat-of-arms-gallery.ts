@@ -1,18 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCircleAlert, lucideFilePlus, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideCircleAlert, lucideCopy, lucideFilePlus, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { CoatOfArmsService } from '../coat-of-arms.service';
 import { HeraldicShield } from '../heraldic-shield/heraldic-shield';
-import { type CoatOfArms, displayName } from '../heraldry/model';
+import { type CoatOfArms, displayName, duplicateCoat } from '../heraldry/model';
 import { type CustomTincture, tinctureMap } from '../heraldry/tinctures';
 
 /** The saved coats of arms. Selecting one opens it in the designer. */
 @Component({
   selector: 'app-coat-of-arms-gallery',
   imports: [HlmButton, NgIcon, RouterLink, HeraldicShield],
-  providers: [provideIcons({ lucideCircleAlert, lucideFilePlus, lucideTrash2 })],
+  providers: [provideIcons({ lucideCircleAlert, lucideCopy, lucideFilePlus, lucideTrash2 })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './coat-of-arms-gallery.html',
 })
@@ -39,6 +39,22 @@ export class CoatOfArmsGalleryPage {
       month: 'short',
       year: 'numeric',
     });
+  }
+
+  /** Save a copy of a coat of arms; it appears first, as the newest. */
+  protected async duplicate(coat: CoatOfArms): Promise<void> {
+    try {
+      const copy = await this.db.coats.add(
+        duplicateCoat(
+          coat,
+          this.coats().map((c) => c.name),
+        ),
+      );
+      this.coats.update((list) => [copy, ...list]);
+      this.error.set(null);
+    } catch {
+      this.error.set('The coat of arms could not be duplicated.');
+    }
   }
 
   protected async delete(coat: CoatOfArms): Promise<void> {

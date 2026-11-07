@@ -41,7 +41,7 @@
           class="gallery-item bg-card relative flex flex-col rounded-lg border shadow-(--rpg-shadow-sm)"
         >
           <a
-            class="hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-2 rounded-lg p-3 outline-none focus-visible:ring-2"
+            class="hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-2 rounded-lg p-3 pt-9 outline-none focus-visible:ring-2"
             routerLink="/coat-of-arms"
             [queryParams]="{ coat: coat.id }"
           >
@@ -51,23 +51,37 @@
               [tinctures]="tinctures()"
               [label]="displayName(coat)"
             />
-            <span class="w-full truncate text-center text-sm font-medium">{{
+            <span class="coat-title w-full truncate text-center text-sm font-medium">{{
               displayName(coat)
             }}</span>
             <span class="text-muted-foreground text-xs">{{ formatDate(coat.updatedAt) }}</span>
           </a>
-          <button
-            hlmBtn
-            variant="ghost"
-            size="icon-xs"
-            type="button"
-            class="delete-saved absolute end-1.5 top-1.5"
-            [attr.aria-label]="'Delete ' + displayName(coat)"
-            [title]="'Delete ' + displayName(coat)"
-            (click)="delete(coat)"
-          >
-            <ng-icon name="lucideTrash2" />
-          </button>
+          <div class="absolute end-1.5 top-1.5 flex gap-0.5">
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-xs"
+              type="button"
+              class="duplicate-saved"
+              [attr.aria-label]="'Duplicate ' + displayName(coat)"
+              [title]="'Duplicate ' + displayName(coat)"
+              (click)="duplicate(coat)"
+            >
+              <ng-icon name="lucideCopy" />
+            </button>
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-xs"
+              type="button"
+              class="delete-saved"
+              [attr.aria-label]="'Delete ' + displayName(coat)"
+              [title]="'Delete ' + displayName(coat)"
+              (click)="delete(coat)"
+            >
+              <ng-icon name="lucideTrash2" />
+            </button>
+          </div>
         </li>
       }
     </ul>
