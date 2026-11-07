@@ -236,6 +236,32 @@
                 variant="outline"
                 size="sm"
                 type="button"
+                class="flip-x"
+                [attr.aria-pressed]="!!t.charge.flipX"
+                [class.bg-muted]="t.charge.flipX"
+                (click)="flipCharge(t.charge, 'x')"
+              >
+                <ng-icon name="lucideFlipHorizontal2" />
+                Flip horizontally
+              </button>
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                type="button"
+                class="flip-y"
+                [attr.aria-pressed]="!!t.charge.flipY"
+                [class.bg-muted]="t.charge.flipY"
+                (click)="flipCharge(t.charge, 'y')"
+              >
+                <ng-icon name="lucideFlipVertical2" />
+                Flip vertically
+              </button>
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                type="button"
                 (click)="resetChargeTransform(t.charge)"
               >
                 <ng-icon name="lucideRotateCcw" />
@@ -279,37 +305,59 @@
           </button>
         </div>
         <div hlmCardContent class="flex flex-col gap-5">
-          @for (group of ordinaryGroups; track group.category) {
-            <div class="flex flex-col gap-2">
-              <h3 class="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                {{ group.label }}
-              </h3>
-              <div class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2">
-                @for (item of group.items; track item.def.id) {
-                  @let chosen = ordinary()?.def?.id === item.def.id;
-                  <button
-                    type="button"
-                    class="ordinary-option hover:bg-muted focus-visible:ring-ring flex flex-col items-center gap-1 rounded-md border p-1.5 text-center text-xs leading-tight outline-none focus-visible:ring-2"
-                    [class.border-primary]="chosen"
-                    [class.bg-muted]="chosen"
-                    [attr.aria-pressed]="chosen"
-                    [attr.data-ordinary]="item.def.id"
-                    [title]="item.def.name + ' — ' + item.def.description"
-                    (click)="chooseOrdinary(item.def.id)"
-                  >
-                    <app-heraldic-shield
-                      class="w-10"
-                      [coat]="item.coat"
-                      [tinctures]="tinctures()"
-                      [label]="item.def.name"
-                      aria-hidden="true"
-                    />
-                    {{ item.def.name }}
-                  </button>
-                }
-              </div>
-            </div>
-          }
+          <div class="flex flex-col gap-2">
+            @for (group of ordinaryGroups; track group.category) {
+              @let chosenHere = ordinary()?.def?.category === group.category;
+              <details
+                class="ordinary-group group rounded-md border"
+                [attr.data-category]="group.category"
+                [open]="isGroupOpen(group.category)"
+                (toggle)="onGroupToggle(group.category, $event)"
+              >
+                <summary
+                  class="hover:bg-muted focus-visible:ring-ring flex cursor-pointer list-none items-center gap-2 rounded-md px-2.5 py-2 outline-none select-none focus-visible:ring-2 [&::-webkit-details-marker]:hidden"
+                >
+                  <ng-icon
+                    name="lucideChevronDown"
+                    class="text-muted-foreground -rotate-90 transition-transform group-open:rotate-0"
+                    aria-hidden="true"
+                  />
+                  <span class="text-xs font-medium tracking-wide uppercase">{{ group.label }}</span>
+                  <span class="text-muted-foreground ms-auto text-xs">
+                    @if (chosenHere) {
+                      <span class="text-foreground font-medium">{{ ordinary()!.def.name }}</span>
+                    } @else {
+                      {{ group.items.length }}
+                    }
+                  </span>
+                </summary>
+                <div class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2 p-2 pt-1">
+                  @for (item of group.items; track item.def.id) {
+                    @let chosen = ordinary()?.def?.id === item.def.id;
+                    <button
+                      type="button"
+                      class="ordinary-option hover:bg-muted focus-visible:ring-ring flex flex-col items-center gap-1 rounded-md border p-1.5 text-center text-xs leading-tight outline-none focus-visible:ring-2"
+                      [class.border-primary]="chosen"
+                      [class.bg-muted]="chosen"
+                      [attr.aria-pressed]="chosen"
+                      [attr.data-ordinary]="item.def.id"
+                      [title]="item.def.name + ' — ' + item.def.description"
+                      (click)="chooseOrdinary(item.def.id)"
+                    >
+                      <app-heraldic-shield
+                        class="w-10"
+                        [coat]="item.coat"
+                        [tinctures]="tinctures()"
+                        [label]="item.def.name"
+                        aria-hidden="true"
+                      />
+                      {{ item.def.name }}
+                    </button>
+                  }
+                </div>
+              </details>
+            }
+          </div>
 
           @if (ordinary(); as o) {
             @if (o.def.lines) {

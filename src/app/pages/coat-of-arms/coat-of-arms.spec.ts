@@ -45,6 +45,7 @@ describe('CoatOfArmsPage', () => {
       imports: [CoatOfArmsPage],
       providers: [{ provide: CoatOfArmsService, useValue: service }],
     }).compileComponents();
+    localStorage.clear();
     vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     vi.spyOn(globalThis, 'scrollTo').mockImplementation(() => {});
   });
@@ -135,6 +136,53 @@ describe('CoatOfArmsPage', () => {
 
     await click('.delete-charge');
     expect(stage().querySelectorAll('image.charge').length).toBe(0);
+  });
+
+  it('flips a charge horizontally and vertically', async () => {
+    const { fixture, stage, page, click } = await render();
+    await page.addFiles([new File([SVG_CHARGE], 'lion.svg', { type: 'image/svg+xml' })]);
+    await fixture.whenStable();
+    const image = () => stage().querySelector('image.charge')!;
+    expect(image().getAttribute('transform')).not.toContain('scale');
+
+    await click('.flip-x');
+    expect(image().getAttribute('transform')).toContain('scale(-1 1)');
+    await click('.flip-y');
+    expect(image().getAttribute('transform')).toContain('scale(-1 -1)');
+    // The handles are not mirrored, so the rotate handle stays on top.
+    expect(stage().querySelector('g[data-ui][transform]')!.getAttribute('transform')).not.toContain(
+      'scale',
+    );
+
+    await click('.flip-x');
+    expect(image().getAttribute('transform')).toContain('scale(1 -1)');
+  });
+
+  it('collapses the ordinary groups and remembers which are open', async () => {
+    const { fixture, el } = await render();
+    const group = (category: string) =>
+      el.querySelector<HTMLDetailsElement>(`.ordinary-group[data-category="${category}"]`)!;
+    expect(group('honourable').open).toBe(true);
+    expect(group('division').open).toBe(false);
+
+    group('division').open = true;
+    group('division').dispatchEvent(new Event('toggle'));
+    group('honourable').open = false;
+    group('honourable').dispatchEvent(new Event('toggle'));
+    await fixture.whenStable();
+
+    const again = await render();
+    const groupAgain = (category: string) =>
+      again.el.querySelector<HTMLDetailsElement>(`.ordinary-group[data-category="${category}"]`)!;
+    expect(groupAgain('division').open).toBe(true);
+    expect(groupAgain('honourable').open).toBe(false);
+  });
+
+  it('names the chosen ordinary on its group', async () => {
+    const { el, click } = await render();
+    await click('[data-ordinary="quarterly"]');
+    const summary = el.querySelector('.ordinary-group[data-category="division"] summary')!;
+    expect(summary.textContent).toContain('Quarterly');
   });
 
   it('rejects files that are not images', async () => {
