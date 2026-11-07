@@ -34,6 +34,10 @@ export interface Charge {
   height: number;
   /** Degrees, clockwise. */
   rotation: number;
+  /** Mirrored left to right. Optional: coats saved before flipping existed lack it. */
+  flipX?: boolean;
+  /** Mirrored top to bottom. */
+  flipY?: boolean;
 }
 
 export interface CoatOfArms {

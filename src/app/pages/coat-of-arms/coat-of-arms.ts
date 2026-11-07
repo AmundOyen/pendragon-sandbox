@@ -11,9 +11,12 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowDown,
   lucideArrowUp,
+  lucideChevronDown,
   lucideCircleAlert,
   lucideDownload,
   lucideFilePlus,
+  lucideFlipHorizontal2,
+  lucideFlipVertical2,
   lucideImagePlus,
   lucideRotateCcw,
   lucideSave,
@@ -24,6 +27,7 @@ import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmLabel } from '@spartan-ng/helm/label';
+import { CalLocalStorage } from '../../core/storage/local-storage.service';
 import { compare, guid } from '../../core/utilities';
 import { CoatOfArmsService } from './coat-of-arms.service';
 import { HeraldicShield } from './heraldic-shield/heraldic-shield';
@@ -60,6 +64,7 @@ import { TincturePalette } from './tincture-palette/tincture-palette';
 
 const ACCEPTED_TYPES = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const OPEN_GROUPS_KEY = '.coat-of-arms.open-groups';
 const PREVIEW_TINCTURES = tinctureMap();
 
 /** Line previews: the region below each line of partition. */
@@ -171,9 +176,12 @@ function chargeName(file: File): string {
     provideIcons({
       lucideArrowDown,
       lucideArrowUp,
+      lucideChevronDown,
       lucideCircleAlert,
       lucideDownload,
       lucideFilePlus,
+      lucideFlipHorizontal2,
+      lucideFlipVertical2,
       lucideImagePlus,
       lucideRotateCcw,
       lucideSave,
@@ -186,11 +194,14 @@ function chargeName(file: File): string {
 })
 export class CoatOfArmsPage {
   private readonly db = inject(CoatOfArmsService);
+  private readonly localStorage = inject(CalLocalStorage);
   private readonly editor = viewChild.required<HeraldicShield>('editor');
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 
   protected readonly ordinaryGroups = ORDINARY_PREVIEWS;
   protected readonly lines = LINE_PREVIEWS;
+  /** Ordinary groups that are expanded; remembered in this browser. */
+  protected readonly openGroups = signal<ReadonlySet<OrdinaryCategory>>(this.restoreOpenGroups());
   protected readonly acceptedTypes = ACCEPTED_TYPES.join(',') + ',.svg';
 
   protected readonly coat = signal<CoatDraft>(newCoat());
@@ -446,6 +457,12 @@ export class CoatOfArmsPage {
     });
   }
 
+  protected flipCharge(charge: Charge, axis: 'x' | 'y'): void {
+    this.updateCharge(
+      axis === 'x' ? { ...charge, flipX: !charge.flipX } : { ...charge, flipY: !charge.flipY },
+    );
+  }
+
   protected resetChargeTransform(charge: Charge): void {
     this.updateCharge({ ...charge, ...placeCharge(charge.width / charge.height) });
   }
@@ -478,6 +495,38 @@ export class CoatOfArmsPage {
     } else if (event.key === 'Escape') {
       this.selection.set({ kind: 'field' });
     }
+  }
+
+  // --- Collapsible ordinary groups ----------------------------------------------------
+
+  protected isGroupOpen(category: OrdinaryCategory): boolean {
+    return this.openGroups().has(category);
+  }
+
+  protected onGroupToggle(category: OrdinaryCategory, event: Event): void {
+    const open = (event.target as HTMLDetailsElement).open;
+    if (open === this.isGroupOpen(category)) return;
+    this.openGroups.update((groups) => {
+      const next = new Set(groups);
+      if (open) next.add(category);
+      else next.delete(category);
+      return next;
+    });
+    try {
+      this.localStorage.set(OPEN_GROUPS_KEY, [...this.openGroups()]);
+    } catch {
+      // Storage can be unavailable (private mode); the groups just won't be remembered.
+    }
+  }
+
+  private restoreOpenGroups(): Set<OrdinaryCategory> {
+    try {
+      const saved = this.localStorage.get<OrdinaryCategory[]>(OPEN_GROUPS_KEY);
+      if (Array.isArray(saved)) return new Set(saved.filter((c) => c in CATEGORY_LABELS));
+    } catch {
+      // Fall back to the default below.
+    }
+    return new Set<OrdinaryCategory>(['honourable']);
   }
 
   // --- Name, save, gallery -------------------------------------------------------------

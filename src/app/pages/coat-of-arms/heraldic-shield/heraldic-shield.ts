@@ -45,7 +45,10 @@ interface PartView {
 interface ChargeView {
   charge: Charge;
   href: string;
+  /** Position and rotation; the selection outline and handles use this. */
   transform: string;
+  /** The transform plus any flip, for the image itself. */
+  imageTransform: string;
 }
 
 interface FurView {
@@ -129,11 +132,18 @@ export class HeraldicShield {
 
   protected readonly charges = computed<ChargeView[]>(() => {
     const map = this.tinctures();
-    return this.coat().charges.map((charge) => ({
-      charge,
-      href: this.chargeHref(charge, map),
-      transform: `translate(${charge.x} ${charge.y}) rotate(${charge.rotation})`,
-    }));
+    return this.coat().charges.map((charge) => {
+      const transform = `translate(${charge.x} ${charge.y}) rotate(${charge.rotation})`;
+      const flipped = charge.flipX || charge.flipY;
+      return {
+        charge,
+        href: this.chargeHref(charge, map),
+        transform,
+        imageTransform: flipped
+          ? `${transform} scale(${charge.flipX ? -1 : 1} ${charge.flipY ? -1 : 1})`
+          : transform,
+      };
+    });
   });
 
   protected readonly selectedPart = computed(() => {
