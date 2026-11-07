@@ -60,7 +60,7 @@ convention), set by `ThemeService` and by a small inline script in
 
 Nothing is selected when the page opens. Clicking outside the shield (around it or elsewhere on the page) or pressing Escape clears the selection; clicks in the editing panels keep it.
 
-A rule-of-tincture hint appears when metal lies on metal or colour on colour. It never blocks a design. Saved coats are listed on their own page, `/coat-of-arms/gallery`; selecting one opens it in the designer as `/coat-of-arms?coat=<id>`, so the link survives a reload. The designer asks before you leave it with unsaved changes. Coats can be exported as SVG or PNG (1024 px wide, transparent background).
+A rule-of-tincture hint appears when metal lies on metal or colour on colour. It never blocks a design. Saved coats are listed on their own page, `/coat-of-arms/gallery`; selecting one opens it in the designer as `/coat-of-arms?coat=<id>`, so the link survives a reload. The designer asks before you leave it with unsaved changes. A coat can be duplicated from its gallery card, or from the designer once it is saved (the copy, named "… (copy)", takes any unsaved changes and opens in the designer). Coats can be exported as SVG or PNG (1024 px wide, transparent background).
 
 The geometry lives in `pages/coat-of-arms/heraldry/` (plain TypeScript, unit tested): `ordinaries.ts` builds every ordinary as polygons that are clipped to the shield, and `lines.ts` decorates any edge with a line of partition. Storage is `CoatOfArmsService`, which extends `ClientDB` with two IndexedDB stores: `coats` and `tinctures`.
 

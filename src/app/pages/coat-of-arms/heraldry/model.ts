@@ -154,3 +154,25 @@ export function placeCharge(
 export function displayName(coat: Pick<CoatDraft, 'name'>): string {
   return coat.name.trim() || DEFAULT_NAME;
 }
+
+/**
+ * A name for a copy that no saved coat already uses: "Sir Kay" becomes "Sir Kay (copy)",
+ * then "Sir Kay (copy 2)", and so on. Copying a copy counts on from the original name.
+ */
+export function copyName(name: string, taken: Iterable<string>): string {
+  const base = displayName({ name }).replace(/\s*\(copy(?: \d+)?\)$/, '');
+  const used = new Set([...taken].map((n) => n.trim()));
+  let candidate = `${base} (copy)`;
+  for (let n = 2; used.has(candidate); n++) candidate = `${base} (copy ${n})`;
+  return candidate;
+}
+
+/** A new, unsaved coat of arms with the same design, named as a copy. */
+export function duplicateCoat(
+  coat: CoatDraft,
+  takenNames: Iterable<string>,
+  now = Date.now(),
+): Omit<CoatOfArms, 'id'> {
+  const { id: _id, ...design } = structuredClone(coat);
+  return { ...design, name: copyName(coat.name, takenNames), createdAt: now, updatedAt: now };
+}

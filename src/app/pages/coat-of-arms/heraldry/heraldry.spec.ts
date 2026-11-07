@@ -1,7 +1,15 @@
 import { fileSlug } from './export';
 import { FESS_POINT, insetLoop, pointInShape, shieldOutline, SHIELD, toPathData } from './geometry';
 import { decorate, LINES } from './lines';
-import { type CoatDraft, defaultTinctures, newCoat, tinctureAt, tinctureHints } from './model';
+import {
+  type CoatDraft,
+  copyName,
+  defaultTinctures,
+  duplicateCoat,
+  newCoat,
+  tinctureAt,
+  tinctureHints,
+} from './model';
 import { ORDINARIES, ordinaryParts } from './ordinaries';
 import { recolourSvg } from './recolour';
 import { resolveTincture, ruleOfTinctureViolation, tinctureMap } from './tinctures';
@@ -181,5 +189,32 @@ describe('fileSlug', () => {
     expect(fileSlug('Sir Bors de Ganis')).toBe('sir-bors-de-ganis');
     expect(fileSlug('Tenné & Gules!')).toBe('tenne-gules');
     expect(fileSlug('  ')).toBe('coat-of-arms');
+  });
+});
+
+describe('duplicating', () => {
+  it('names copies so they do not clash', () => {
+    expect(copyName('Sir Kay', [])).toBe('Sir Kay (copy)');
+    expect(copyName('Sir Kay', ['Sir Kay (copy)'])).toBe('Sir Kay (copy 2)');
+    expect(copyName('Sir Kay (copy)', ['Sir Kay (copy)', 'Sir Kay (copy 2)'])).toBe(
+      'Sir Kay (copy 3)',
+    );
+    expect(copyName('  ', [])).toBe('Untitled arms (copy)');
+  });
+
+  it('copies the design deeply, without the id', () => {
+    const original = {
+      ...newCoat(1),
+      id: 'a',
+      name: 'Sir Kay',
+      ordinary: { type: 'chief' as const, line: 'wavy' as const, tinctures: ['or'] },
+    };
+    const copy = duplicateCoat(original, ['Sir Kay'], 5);
+    expect('id' in copy).toBe(false);
+    expect(copy.name).toBe('Sir Kay (copy)');
+    expect(copy.createdAt).toBe(5);
+    expect(copy.ordinary).toEqual(original.ordinary);
+    copy.ordinary!.tinctures[0] = 'gules';
+    expect(original.ordinary.tinctures[0]).toBe('or');
   });
 });

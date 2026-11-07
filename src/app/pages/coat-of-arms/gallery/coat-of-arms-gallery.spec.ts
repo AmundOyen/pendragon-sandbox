@@ -39,7 +39,7 @@ describe('CoatOfArmsGalleryPage', () => {
     await service.coats.add({ ...newCoat(1), name: '', updatedAt: 200 });
     const { el } = await render();
     const items = Array.from(el.querySelectorAll('.gallery-item'));
-    expect(items.map((i) => i.querySelector('.text-sm')!.textContent!.trim())).toEqual([
+    expect(items.map((i) => i.querySelector('.coat-title')!.textContent!.trim())).toEqual([
       'Untitled arms',
       'Sir Kay',
     ]);
@@ -56,6 +56,21 @@ describe('CoatOfArmsGalleryPage', () => {
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe(`/coat-of-arms?coat=${saved.id}`);
     expect(harness.routeDebugElement!.componentInstance).toBeInstanceOf(CoatOfArmsPage);
+  });
+
+  it('duplicates a coat of arms as the newest', async () => {
+    await service.coats.add({ ...newCoat(1), name: 'Sir Kay', field: 'vert', updatedAt: 1 });
+    const { harness, el } = await render();
+    el.querySelector<HTMLButtonElement>('.duplicate-saved')!.click();
+    await harness.fixture.whenStable();
+
+    const saved = await service.coats.read();
+    expect(saved.map((c) => c.name).sort()).toEqual(['Sir Kay', 'Sir Kay (copy)']);
+    expect(saved.find((c) => c.name === 'Sir Kay (copy)')!.field).toBe('vert');
+    const names = Array.from(el.querySelectorAll('.gallery-item .coat-title')).map((n) =>
+      n.textContent!.trim(),
+    );
+    expect(names).toEqual(['Sir Kay (copy)', 'Sir Kay']);
   });
 
   it('deletes a coat of arms after asking', async () => {
