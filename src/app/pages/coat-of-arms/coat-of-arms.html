@@ -1,4 +1,4 @@
-<section class="mx-auto flex max-w-7xl flex-col gap-6 p-4 md:p-8">
+<section class="mx-auto flex max-w-7xl flex-col gap-6 p-4 md:p-8" (click)="onPageClick($event)">
   <header class="flex flex-wrap items-end justify-between gap-4">
     <div class="flex flex-col gap-1">
       <h1 class="font-display text-3xl font-bold">Coat of Arms</h1>
@@ -155,7 +155,8 @@
       </div>
     </section>
 
-    <div class="flex flex-col gap-6">
+    <!-- Clicks in the editing panels keep the selection. -->
+    <div class="flex flex-col gap-6" data-keep-selection>
       <!-- Tincture of the selected target -->
       <section hlmCard aria-labelledby="target-title">
         <div hlmCardHeader>
@@ -164,7 +165,18 @@
         </div>
         <div hlmCardContent class="flex flex-col gap-4">
           @let t = target();
-          @if (t.kind === 'part' && t.deleted) {
+          @if (t.kind === 'none') {
+            <button
+              hlmBtn
+              variant="outline"
+              size="sm"
+              type="button"
+              class="select-field self-start"
+              (click)="select({ kind: 'field' })"
+            >
+              Edit the field
+            </button>
+          } @else if (t.kind === 'part' && t.deleted) {
             <p class="text-muted-foreground text-sm">
               This part is deleted; the field shows through.
             </p>
@@ -405,7 +417,7 @@
               <ul class="flex flex-wrap gap-2">
                 @for (part of parts(); track part.index) {
                   @let partSelected =
-                    selection().kind === 'part' && $any(selection()).index === part.index;
+                    selection()?.kind === 'part' && $any(selection()).index === part.index;
                   <li>
                     <button
                       type="button"

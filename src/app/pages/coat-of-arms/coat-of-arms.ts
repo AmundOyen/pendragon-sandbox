@@ -207,7 +207,8 @@ export class CoatOfArmsPage {
   protected readonly coat = signal<CoatDraft>(newCoat());
   /** The coat as last saved or opened, to tell whether there are unsaved changes. */
   private readonly snapshot = signal<CoatDraft>(clone(this.coat()));
-  protected readonly selection = signal<Selection>({ kind: 'field' });
+  /** What is being edited; null when nothing is selected. */
+  protected readonly selection = signal<Selection | null>(null);
 
   protected readonly gallery = signal<CoatOfArms[]>([]);
   protected readonly galleryLoaded = signal(false);
@@ -241,14 +242,14 @@ export class CoatOfArmsPage {
 
   protected readonly selectedCharge = computed(() => {
     const s = this.selection();
-    return s.kind === 'charge' ? (this.coat().charges.find((c) => c.id === s.id) ?? null) : null;
+    return s?.kind === 'charge' ? (this.coat().charges.find((c) => c.id === s.id) ?? null) : null;
   });
 
   /** What the tincture panel is editing. */
   protected readonly target = computed(() => {
     const s = this.selection();
     const coat = this.coat();
-    if (s.kind === 'part') {
+    if (s?.kind === 'part') {
       const part = this.parts()[s.index];
       if (part) {
         return {
@@ -261,7 +262,7 @@ export class CoatOfArmsPage {
         };
       }
     }
-    if (s.kind === 'charge') {
+    if (s?.kind === 'charge') {
       const charge = this.selectedCharge();
       if (charge) {
         return {
@@ -275,6 +276,14 @@ export class CoatOfArmsPage {
           charge,
         };
       }
+    }
+    if (s?.kind !== 'field') {
+      return {
+        kind: 'none' as const,
+        title: 'Nothing selected',
+        hint: 'Click the field, a part of the ordinary or a charge on the shield to change it.',
+        tincture: null,
+      };
     }
     const division = this.ordinary() && !liesOnField(this.ordinary()!.def);
     return {
@@ -295,8 +304,25 @@ export class CoatOfArmsPage {
 
   // --- Field and ordinary --------------------------------------------------------------
 
-  protected select(selection: Selection): void {
+  protected select(selection: Selection | null): void {
     this.selection.set(selection);
+  }
+
+  /**
+   * A click that lands outside the shield's field, ordinary and charges (the space around
+   * the shield, or the page) clears the selection. Clicks on controls, and anywhere in the
+   * editing panels, keep it.
+   */
+  protected onPageClick(event: MouseEvent): void {
+    const target = event.target as Element | null;
+    if (!target?.closest) return;
+    if (target.closest('.field, .part, .charge, [data-ui]')) return;
+    if (
+      target.closest('button, input, label, select, textarea, summary, a, [data-keep-selection]')
+    ) {
+      return;
+    }
+    this.selection.set(null);
   }
 
   protected pickTincture(id: TinctureId | null): void {
@@ -317,7 +343,7 @@ export class CoatOfArmsPage {
   protected chooseOrdinary(type: OrdinaryType | null): void {
     if (!type) {
       this.coat.update((c) => ({ ...c, ordinary: null }));
-      this.selection.set({ kind: 'field' });
+      this.selection.set(null);
       return;
     }
     const def = ordinaryDef(type);
@@ -442,7 +468,7 @@ export class CoatOfArmsPage {
 
   protected deleteCharge(id: string): void {
     this.coat.update((c) => ({ ...c, charges: c.charges.filter((x) => x.id !== id) }));
-    this.selection.set({ kind: 'field' });
+    this.selection.set(null);
   }
 
   /** Move a charge up (+1, drawn later) or down (-1) the stack. */
@@ -476,6 +502,10 @@ export class CoatOfArmsPage {
   }
 
   protected onStageKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.selection.set(null);
+      return;
+    }
     const charge = this.selectedCharge();
     if (!charge) return;
     const step = event.shiftKey ? 10 : 2;
@@ -492,8 +522,6 @@ export class CoatOfArmsPage {
       event.preventDefault();
       const [dx, dy] = moves[event.key];
       this.updateCharge({ ...charge, x: charge.x + dx, y: charge.y + dy });
-    } else if (event.key === 'Escape') {
-      this.selection.set({ kind: 'field' });
     }
   }
 
@@ -565,7 +593,7 @@ export class CoatOfArmsPage {
     const fresh = newCoat();
     this.coat.set(fresh);
     this.snapshot.set(clone(fresh));
-    this.selection.set({ kind: 'field' });
+    this.selection.set(null);
     this.message.set(null);
   }
 
@@ -575,7 +603,7 @@ export class CoatOfArmsPage {
       return;
     this.coat.set(clone(saved));
     this.snapshot.set(clone(saved));
-    this.selection.set({ kind: 'field' });
+    this.selection.set(null);
     this.message.set(null);
     globalThis.scrollTo?.({ top: 0, behavior: 'smooth' });
   }

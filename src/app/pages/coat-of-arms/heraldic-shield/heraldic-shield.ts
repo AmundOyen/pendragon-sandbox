@@ -89,6 +89,8 @@ export class HeraldicShield {
 
   private readonly svgRef = viewChild.required<ElementRef<SVGSVGElement>>('svg');
   private drag: DragState | null = null;
+  /** Set when a drag ends, so the click the browser sends after it is ignored. */
+  private dragJustEnded = false;
 
   /** The rendered `<svg>`, e.g. for export. */
   get svgElement(): SVGSVGElement {
@@ -232,6 +234,17 @@ export class HeraldicShield {
     this.drag = null;
     const svg = this.svgElement;
     if (svg.hasPointerCapture?.(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+    // The pointer was captured by the <svg>, so the click that follows lands on it and would
+    // read as a click outside the shield. Swallow it; clear the flag if no click comes.
+    this.dragJustEnded = true;
+    setTimeout(() => (this.dragJustEnded = false));
+  }
+
+  protected onClick(event: MouseEvent): void {
+    if (this.dragJustEnded) {
+      this.dragJustEnded = false;
+      event.stopPropagation();
+    }
   }
 
   private startDrag(event: PointerEvent, mode: DragMode, charge: Charge): void {

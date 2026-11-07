@@ -9,6 +9,7 @@
   (pointermove)="onPointerMove($event)"
   (pointerup)="onPointerUp($event)"
   (pointercancel)="onPointerUp($event)"
+  (click)="onClick($event)"
 >
   <defs>
     <clipPath [attr.id]="uid + '-clip'">

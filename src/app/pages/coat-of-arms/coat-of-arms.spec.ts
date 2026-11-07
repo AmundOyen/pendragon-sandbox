@@ -69,18 +69,33 @@ describe('CoatOfArmsPage', () => {
       input.dispatchEvent(new Event('change'));
       await fixture.whenStable();
     };
-    return { fixture, el, stage, click, pickTincture, page: fixture.componentInstance };
+    const selectField = () => click('.field', stage());
+    const title = () => el.querySelector('.target-title')!.textContent!.trim();
+    return {
+      fixture,
+      el,
+      stage,
+      click,
+      pickTincture,
+      selectField,
+      title,
+      page: fixture.componentInstance,
+    };
   }
 
-  it('starts with a plain azure field selected', async () => {
-    const { el, stage } = await render();
-    expect(el.querySelector('.target-title')!.textContent).toContain('Field');
+  it('starts with a plain azure field and nothing selected', async () => {
+    const { el, stage, title } = await render();
+    expect(title()).toBe('Nothing selected');
+    expect(el.querySelector('app-tincture-palette')).toBeNull();
+    expect(stage().querySelector('[data-ui] path')).toBeNull();
     expect(stage().querySelector('.field')!.getAttribute('fill')).toBe('#1f4fa8');
     expect(stage().querySelectorAll('.part').length).toBe(0);
   });
 
   it('sets the field tincture from the palette', async () => {
-    const { stage, pickTincture } = await render();
+    const { stage, pickTincture, selectField, title } = await render();
+    await selectField();
+    expect(title()).toBe('Field');
     await pickTincture('gules');
     expect(stage().querySelector('.field')!.getAttribute('fill')).toBe('#d0181f');
   });
@@ -101,8 +116,48 @@ describe('CoatOfArmsPage', () => {
     expect(el.textContent).toContain('Restore part');
   });
 
+  it('selects the field from the empty panel', async () => {
+    const { click, title } = await render();
+    await click('.select-field');
+    expect(title()).toBe('Field');
+  });
+
+  it('clears the selection when clicking outside the shield', async () => {
+    const { fixture, stage, click, selectField, title } = await render();
+    await click('[data-ordinary="chief"]');
+    expect(title()).toBe('Chief');
+
+    // The space around the shield inside the <svg>.
+    stage().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await fixture.whenStable();
+    expect(title()).toBe('Nothing selected');
+
+    await selectField();
+    expect(title()).toBe('Field');
+    // The page around the designer.
+    await click('#gallery-title');
+    expect(title()).toBe('Nothing selected');
+  });
+
+  it('keeps the selection when clicking in the editing panels', async () => {
+    const { click, selectField, title } = await render();
+    await selectField();
+    await click('#ordinary-title');
+    await click('.ordinary-group summary');
+    expect(title()).toBe('Field');
+  });
+
+  it('clears the selection with Escape', async () => {
+    const { fixture, el, selectField, title } = await render();
+    await selectField();
+    el.querySelector('.stage')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await fixture.whenStable();
+    expect(title()).toBe('Nothing selected');
+  });
+
   it('uses a pattern for a fur field', async () => {
-    const { stage, pickTincture } = await render();
+    const { stage, pickTincture, selectField } = await render();
+    await selectField();
     await pickTincture('ermine');
     expect(stage().querySelector('.field')!.getAttribute('fill')).toMatch(
       /^url\(#coa-\d+-fur-ermine\)$/,
@@ -111,7 +166,8 @@ describe('CoatOfArmsPage', () => {
   });
 
   it('shows a rule-of-tincture hint for metal on metal', async () => {
-    const { el, click, pickTincture } = await render();
+    const { el, click, pickTincture, selectField } = await render();
+    await selectField();
     await pickTincture('argent');
     await click('[data-ordinary="chief"]');
     await pickTincture('or');
@@ -193,10 +249,11 @@ describe('CoatOfArmsPage', () => {
   });
 
   it('saves to the gallery and opens a saved coat of arms again', async () => {
-    const { fixture, el, stage, click, pickTincture, page } = await render();
+    const { fixture, el, stage, click, pickTincture, selectField, page } = await render();
     const name = el.querySelector<HTMLInputElement>('.coat-name')!;
     name.value = 'Sir Bors';
     name.dispatchEvent(new Event('input'));
+    await selectField();
     await pickTincture('or');
     await page.save();
     await fixture.whenStable();
@@ -215,7 +272,8 @@ describe('CoatOfArmsPage', () => {
   });
 
   it('creates a custom tincture shared through the service', async () => {
-    const { fixture, el, page, stage } = await render();
+    const { fixture, el, page, stage, selectField } = await render();
+    await selectField();
     await page.createTincture({ name: 'Celeste', color: '#88bbee', class: 'colour' });
     await fixture.whenStable();
     expect(await service.tinctures.read()).toHaveLength(1);

@@ -58,6 +58,8 @@ convention), set by `ThemeService` and by a small inline script in
 - **Ordinary**: an honourable ordinary (and diminutives), a sub-ordinary, a divided field or a pattern, picked from groups that collapse (which ones are open is remembered in the browser), with any line of partition (engrailed, invected, wavy, indented, dancetty, embattled, raguly, nebuly). Each part can be clicked to tincture or delete it. Repeating patterns (chequy, barry…) have two parts, the alternating tinctures.
 - **Charges**: image files dropped on the shield or picked with *Add charge*. Drag a charge to move it, and use the corner handles to resize it and the top handle to rotate it (Shift snaps to 15°). It can also be flipped horizontally or vertically. Arrow keys nudge it and Delete removes it. Each SVG charge can take a tincture: coloured fills are replaced and black outlines and white details are kept, while a black silhouette is filled whole. PNG, JPEG, WebP and GIF charges keep their colours.
 
+Nothing is selected when the page opens. Clicking outside the shield (around it or elsewhere on the page) or pressing Escape clears the selection; clicks in the editing panels keep it.
+
 A rule-of-tincture hint appears when metal lies on metal or colour on colour. It never blocks a design. Coats are saved to a gallery and can be exported as SVG or PNG (1024 px wide, transparent background).
 
 The geometry lives in `pages/coat-of-arms/heraldry/` (plain TypeScript, unit tested): `ordinaries.ts` builds every ordinary as polygons that are clipped to the shield, and `lines.ts` decorates any edge with a line of partition. Storage is `CoatOfArmsService`, which extends `ClientDB` with two IndexedDB stores: `coats` and `tinctures`.
