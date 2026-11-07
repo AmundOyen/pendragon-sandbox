@@ -16,5 +16,10 @@ export const routes: Routes = [
     title: 'Dice Tray · Pendragon Sandbox',
     loadComponent: () => import('./pages/dice-tray/dice-tray').then((m) => m.DiceTrayPage),
   },
+  {
+    path: 'coat-of-arms',
+    title: 'Coat of Arms · Pendragon Sandbox',
+    loadComponent: () => import('./pages/coat-of-arms/coat-of-arms').then((m) => m.CoatOfArmsPage),
+  },
   { path: '**', redirectTo: '' },
 ];

@@ -33,6 +33,7 @@ export class AppSidebar {
     { label: 'Home', icon: 'ra-tower', route: '/', exact: true },
     { label: 'Samhladh Invocations', icon: 'ra-aura', route: '/samhladh' },
     { label: 'Dice Tray', icon: 'ra-perspective-dice-six', route: '/dice' },
+    { label: 'Coat of Arms', icon: 'ra-heavy-shield', route: '/coat-of-arms' },
   ];
 
   protected readonly themeActions: ThemeAction[] = [

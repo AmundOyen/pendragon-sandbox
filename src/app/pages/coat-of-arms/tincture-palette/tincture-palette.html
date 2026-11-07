@@ -1,0 +1,196 @@
+<fieldset class="flex flex-col gap-3">
+  <legend class="sr-only">{{ label() }}</legend>
+
+  @if (allowOwnColours()) {
+    <label
+      class="has-focus-visible:ring-ring flex cursor-pointer items-center gap-2 self-start rounded-md border px-2.5 py-1.5 text-sm has-focus-visible:ring-2"
+      [class.border-primary]="selected() === null"
+      [class.bg-muted]="selected() === null"
+    >
+      <input
+        type="radio"
+        class="sr-only"
+        [name]="uid"
+        [checked]="selected() === null"
+        (change)="choose(null)"
+      />
+      <span
+        class="size-4 rounded-full border bg-[conic-gradient(var(--rpg-destructive-500),var(--rpg-primary-400),var(--rpg-secondary-400),var(--rpg-destructive-500))]"
+        aria-hidden="true"
+      ></span>
+      Own colours
+    </label>
+  }
+
+  @for (group of groups(); track group.label) {
+    @if (group.swatches.length || group.label === 'Your tinctures') {
+      <div class="flex flex-col gap-1.5">
+        <span class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{
+          group.label
+        }}</span>
+        <div class="flex flex-wrap gap-2">
+          @for (s of group.swatches; track s.tincture.id) {
+            @let isSelected = selected() === s.tincture.id;
+            <label
+              class="swatch has-focus-visible:ring-ring relative flex size-9 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-black/25 shadow-(--rpg-shadow-sm) has-focus-visible:ring-2 has-focus-visible:ring-offset-2"
+              [class.ring-2]="isSelected"
+              [class.ring-primary]="isSelected"
+              [class.ring-offset-2]="isSelected"
+              [class.ring-offset-background]="isSelected"
+              [style.background-color]="s.ground"
+              [title]="s.tincture.name + ' — ' + s.tincture.description"
+              [attr.data-tincture]="s.tincture.id"
+            >
+              <input
+                type="radio"
+                class="sr-only"
+                [name]="uid"
+                [value]="s.tincture.id"
+                [checked]="isSelected"
+                [attr.aria-label]="s.tincture.name + ', ' + s.tincture.description"
+                (change)="choose(s.tincture.id)"
+              />
+              @if (s.tincture.fur; as fur) {
+                <svg
+                  class="absolute inset-0 size-full"
+                  viewBox="0 0 36 36"
+                  aria-hidden="true"
+                  preserveAspectRatio="xMidYMid slice"
+                >
+                  <defs>
+                    <pattern
+                      [attr.id]="uid + '-' + s.tincture.id"
+                      patternUnits="userSpaceOnUse"
+                      [attr.width]="fur.width"
+                      [attr.height]="fur.height"
+                      patternTransform="scale(0.6)"
+                    >
+                      <rect
+                        [attr.width]="fur.width"
+                        [attr.height]="fur.height"
+                        [attr.fill]="s.ground"
+                      />
+                      @for (d of fur.paths; track $index) {
+                        <path [attr.d]="d" [attr.fill]="s.spots" />
+                      }
+                    </pattern>
+                  </defs>
+                  <rect
+                    width="36"
+                    height="36"
+                    [attr.fill]="'url(#' + uid + '-' + s.tincture.id + ')'"
+                  />
+                </svg>
+              }
+              @if (isSelected) {
+                <ng-icon
+                  name="lucideCheck"
+                  class="relative rounded-full bg-black/45 p-0.5 text-white"
+                  aria-hidden="true"
+                />
+              }
+            </label>
+          }
+          @if (group.label === 'Your tinctures') {
+            <button
+              hlmBtn
+              type="button"
+              variant="outline"
+              size="icon"
+              class="border-dashed"
+              aria-label="Create a tincture"
+              title="Create a tincture"
+              [disabled]="creating()"
+              (click)="startCreating()"
+            >
+              <ng-icon name="lucidePlus" />
+            </button>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <p class="text-muted-foreground text-sm" aria-live="polite">{{ selectedName() }}</p>
+
+  @if (selectedCustom(); as custom) {
+    <button
+      hlmBtn
+      type="button"
+      variant="destructive"
+      size="sm"
+      class="self-start"
+      (click)="deleteCustom.emit(custom)"
+    >
+      <ng-icon name="lucideTrash2" />
+      Delete {{ custom.name }}
+    </button>
+  }
+
+  @if (creating()) {
+    <form
+      class="bg-muted/40 flex flex-col gap-3 rounded-md border p-3"
+      (submit)="submitCustom($event)"
+    >
+      <div class="flex flex-col gap-1.5">
+        <label hlmLabel [for]="uid + '-name'">Name</label>
+        <input
+          hlmInput
+          [id]="uid + '-name'"
+          placeholder="e.g. Celeste"
+          maxlength="40"
+          autocomplete="off"
+          [value]="newName()"
+          (input)="newName.set(value($event))"
+        />
+      </div>
+      <div class="flex items-end gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label hlmLabel [for]="uid + '-color'">Colour</label>
+          <input
+            type="color"
+            class="h-9 w-14 cursor-pointer rounded-md border bg-transparent p-1"
+            [id]="uid + '-color'"
+            [value]="newColor()"
+            (input)="newColor.set(value($event))"
+          />
+        </div>
+        <fieldset class="flex flex-col gap-1.5">
+          <legend class="mb-1.5 text-sm font-medium">Counts as</legend>
+          <div class="flex gap-3 text-sm">
+            <label class="flex items-center gap-1.5">
+              <input
+                type="radio"
+                value="metal"
+                [name]="uid + '-class'"
+                [checked]="newClass() === 'metal'"
+                (change)="newClass.set('metal')"
+              />
+              Metal
+            </label>
+            <label class="flex items-center gap-1.5">
+              <input
+                type="radio"
+                value="colour"
+                [name]="uid + '-class'"
+                [checked]="newClass() === 'colour'"
+                (change)="newClass.set('colour')"
+              />
+              Colour
+            </label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="flex gap-2">
+        <button hlmBtn type="submit" size="sm" [disabled]="!canCreate()">
+          <ng-icon name="lucidePlus" />
+          Add tincture
+        </button>
+        <button hlmBtn type="button" variant="ghost" size="sm" (click)="creating.set(false)">
+          <ng-icon name="lucideX" />
+          Cancel
+        </button>
+      </div>
+    </form>
+  }
+</fieldset>
