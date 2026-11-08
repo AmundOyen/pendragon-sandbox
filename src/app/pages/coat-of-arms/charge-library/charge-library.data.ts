@@ -53,7 +53,6 @@ export const CHARGE_LIBRARY: readonly LibraryCharge[] = [
   { file: 'annulets.svg', name: 'Annulet' },
   { file: 'roundels.svg', name: 'Roundel' },
   { file: 'lozenges.svg', name: 'Lozenge' },
-  { file: 'pale.svg', name: 'Shield with a pale' },
 ];
 
 const BY_FILE = new Map(CHARGE_LIBRARY.map((c) => [c.file, c]));
