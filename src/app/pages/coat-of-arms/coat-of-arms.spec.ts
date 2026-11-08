@@ -2,10 +2,16 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
+import { CHARGE_DRAG_TYPE } from './charge-library/charge-library.data';
 import { CoatOfArmsPage } from './coat-of-arms';
 import { CoatOfArmsService } from './coat-of-arms.service';
 import { newCoat } from './heraldry/model';
 import { FakeCoatOfArmsService } from './testing/fake-coat-of-arms.service';
+
+/** Drawn in black on white, like the charge library. */
+const LIBRARY_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 100">' +
+  '<path d="M0 0h80v100z" fill="#FFFFFF"/><path d="M1 1h2v2z" fill="#000000"/></svg>';
 
 const SVG_CHARGE =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><path d="M0 0h100v50z" fill="#e0a000"/></svg>';
@@ -168,6 +174,52 @@ describe('CoatOfArmsPage', () => {
 
     await click('.delete-charge');
     expect(stage().querySelectorAll('image.charge').length).toBe(0);
+  });
+
+  it('adds a library charge in a contrasting tincture when clicked', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(LIBRARY_SVG, { status: 200 }));
+    const { fixture, el, stage, title } = await render();
+    el.querySelector<HTMLButtonElement>('[data-charge-file="lion-rampant.svg"]')!.click();
+    await vi.waitFor(() => expect(stage().querySelector('image.charge')).not.toBeNull());
+    await fixture.whenStable();
+
+    expect(fetch).toHaveBeenCalledWith('cote-of-arms/charges/lion-rampant.svg');
+    expect(title()).toBe('Lion rampant');
+    // On the azure field, so it takes Or; its white body is recoloured.
+    const href = decodeURIComponent(stage().querySelector('image.charge')!.getAttribute('href')!);
+    expect(href).toContain('fill="#f2c318"');
+  });
+
+  it('adds a library charge dropped on the shield', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(LIBRARY_SVG, { status: 200 }));
+    const { fixture, el, stage } = await render();
+    const drop = Object.assign(new Event('drop', { bubbles: true, cancelable: true }), {
+      clientX: 10,
+      clientY: 10,
+      dataTransfer: {
+        getData: (type: string) => (type === CHARGE_DRAG_TYPE ? 'wolf.svg' : ''),
+        files: [],
+      },
+    });
+    el.querySelector('.stage')!.dispatchEvent(drop);
+    await vi.waitFor(() => expect(stage().querySelector('image.charge')).not.toBeNull());
+    await fixture.whenStable();
+    expect(drop.defaultPrevented).toBe(true);
+    expect(el.querySelector('.charge-row')!.textContent).toContain('Wolf');
+  });
+
+  it('ignores dropped data that is not a library charge', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const { fixture, el, stage } = await render();
+    const drop = Object.assign(new Event('drop', { bubbles: true, cancelable: true }), {
+      dataTransfer: { getData: () => 'https://example.com/evil.svg', files: [] },
+    });
+    el.querySelector('.stage')!.dispatchEvent(drop);
+    await fixture.whenStable();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(stage().querySelector('image.charge')).toBeNull();
   });
 
   it('flips a charge horizontally and vertically', async () => {
