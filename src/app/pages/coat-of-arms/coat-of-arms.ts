@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -226,6 +227,12 @@ export class CoatOfArmsPage {
   private readonly localStorage = inject(CalLocalStorage);
   private readonly editor = viewChild.required<HeraldicShield>('editor');
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
+  private readonly pageHeader = viewChild.required<ElementRef<HTMLElement>>('pageHeader');
+  /**
+   * Height of the sticky page header, in pixels, so the sticky shield can sit just below it
+   * (the header wraps onto more lines on narrow screens). Null until measured.
+   */
+  protected readonly headerHeight = signal<number | null>(null);
 
   protected readonly ordinaryGroups = ORDINARY_PREVIEWS;
   protected readonly lines = LINE_PREVIEWS;
@@ -326,10 +333,20 @@ export class CoatOfArmsPage {
   protected readonly hints = computed(() => tinctureHints(this.coat(), this.tinctures()));
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const header = this.pageHeader().nativeElement;
+      const measure = () => this.headerHeight.set(header.offsetHeight || null);
+      measure();
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(measure);
+      observer.observe(header);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
     void this.loadTinctures();
     // `?coat=<id>` opens a saved coat of arms; no id means a new one.
     this.route.queryParamMap
-      .pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((params) => void this.openFromUrl(params.get('coat')));
   }
 

@@ -1,20 +1,36 @@
-<section class="mx-auto flex max-w-7xl flex-col gap-6 p-4 md:p-8" (click)="onPageClick($event)">
-  <header class="flex flex-wrap items-end justify-between gap-4">
-    <div class="flex flex-col gap-1">
-      <h1 class="font-display text-3xl font-bold">Coat of Arms</h1>
-      <p class="text-muted-foreground max-w-prose">
-        Choose a field, an ordinary and your charges, then save your arms to the gallery or export
-        them for the character sheet.
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-2">
-      <a hlmBtn variant="outline" routerLink="/coat-of-arms/gallery" class="gallery-link">
+<section
+  class="mx-auto flex max-w-7xl flex-col gap-6 px-4 pb-4 md:px-8 md:pb-8"
+  [style.--coa-header-height.px]="headerHeight()"
+  (click)="onPageClick($event)"
+>
+  <!-- Sticks below the app's top bar (h-14) while the page scrolls. -->
+  <header
+    #pageHeader
+    class="page-header bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-14 z-10 -mx-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-4 py-3 backdrop-blur md:-mx-8 md:px-8"
+  >
+    <h1 class="font-display text-xl font-bold sm:text-2xl md:text-3xl">Coat of Arms</h1>
+    <!-- On phones the buttons show only their icons; the labels stay for screen readers. -->
+    <div class="flex flex-wrap gap-1.5 sm:gap-2">
+      <a
+        hlmBtn
+        variant="outline"
+        routerLink="/coat-of-arms/gallery"
+        class="gallery-link"
+        title="Gallery"
+      >
         <ng-icon name="lucideLayoutGrid" />
-        Gallery
+        <span class="max-sm:sr-only">Gallery</span>
       </a>
-      <button hlmBtn variant="outline" type="button" class="new-button" (click)="startNew()">
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        class="new-button"
+        title="New coat of arms"
+        (click)="startNew()"
+      >
         <ng-icon name="lucideFilePlus" />
-        New
+        <span class="max-sm:sr-only">New</span>
       </button>
       <button
         hlmBtn
@@ -26,9 +42,16 @@
         (click)="duplicate()"
       >
         <ng-icon name="lucideCopy" />
-        Duplicate
+        <span class="max-sm:sr-only">Duplicate</span>
       </button>
-      <button hlmBtn variant="outline" type="button" class="export-svg" (click)="exportSvg()">
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        class="export-svg"
+        title="Export as SVG"
+        (click)="exportSvg()"
+      >
         <ng-icon name="lucideDownload" />
         SVG
       </button>
@@ -37,6 +60,7 @@
         variant="outline"
         type="button"
         class="export-png"
+        title="Export as PNG"
         [disabled]="exporting()"
         (click)="exportPng()"
       >
@@ -47,14 +71,20 @@
         hlmBtn
         type="button"
         class="save-button"
+        [title]="isSaved() && !dirty() ? 'Saved' : 'Save'"
         [disabled]="saving() || (isSaved() && !dirty())"
         (click)="save()"
       >
         <ng-icon name="lucideSave" />
-        {{ isSaved() && !dirty() ? 'Saved' : 'Save' }}
+        <span class="max-sm:sr-only">{{ isSaved() && !dirty() ? 'Saved' : 'Save' }}</span>
       </button>
     </div>
   </header>
+
+  <p class="text-muted-foreground -mt-2 max-w-prose">
+    Choose a field, an ordinary and your charges, then save your arms to the gallery or export them
+    for the character sheet.
+  </p>
 
   @if (message(); as m) {
     <p
@@ -72,7 +102,11 @@
 
   <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
     <!-- Stage -->
-    <section hlmCard aria-labelledby="stage-title" class="lg:sticky lg:top-20">
+    <section
+      hlmCard
+      aria-labelledby="stage-title"
+      class="lg:sticky lg:top-[calc(4.5rem+var(--coa-header-height,4rem))]"
+    >
       <div hlmCardHeader class="flex flex-col gap-2">
         <h2 hlmCardTitle id="stage-title" class="sr-only">Designer</h2>
         <label hlmLabel for="coat-name">Name</label>
