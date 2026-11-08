@@ -8,6 +8,8 @@ import { resolveTincture, type Tincture, type TinctureMap } from './tinctures';
  *
  * - Line art (a coloured figure with black outlines and white details): every fill that is
  *   not black, white or none takes the tincture; outlines and highlights are kept.
+ * - Drawn in black on white (only black and white fills, like the charge library): the white
+ *   fills take the tincture and the black lines are kept.
  * - A silhouette (only black or unset fills): the black fills take the tincture.
  *
  * A fur is drawn with a pattern added to the charge's own `<defs>`.
@@ -126,6 +128,9 @@ export function recolourSvg(markup: string, tincture: Tincture, map: TinctureMap
   const kinds = collectFills(root).map(classify);
   if (kinds.includes('colour')) {
     rewriteFills(root, (kind) => kind === 'colour', fill);
+  } else if (kinds.includes('white')) {
+    // Drawn in black on white (like the charge library): the white body takes the tincture.
+    rewriteFills(root, (kind) => kind === 'white', fill);
   } else {
     rewriteFills(root, (kind) => kind === 'black', fill);
     // Shapes without a fill default to black: give them the tincture through the root.

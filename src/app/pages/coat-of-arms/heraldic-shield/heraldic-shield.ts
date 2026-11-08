@@ -256,10 +256,15 @@ export class HeraldicShield {
 
   /** Pointer position in shield units. */
   private toShield(event: PointerEvent): Pt | null {
+    return this.clientToShield(event.clientX, event.clientY);
+  }
+
+  /** A point on the screen (e.g. where something was dropped) in shield units. */
+  clientToShield(clientX: number, clientY: number): Pt | null {
     const svg = this.svgElement;
     const matrix = svg.getScreenCTM?.();
     if (!matrix) return null;
-    const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const p = new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
     return [p.x, p.y];
   }
 

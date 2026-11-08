@@ -112,7 +112,7 @@
               class="border-primary bg-background/80 pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-lg font-medium"
             >
               <ng-icon name="lucideUpload" class="text-3xl" aria-hidden="true" />
-              Drop to add a charge
+              Drop to add the charge here
             </div>
           }
         </div>
@@ -128,7 +128,9 @@
             <ng-icon name="lucideImagePlus" />
             Add charge
           </button>
-          <span class="text-muted-foreground text-sm">or drop image files on the shield</span>
+          <span class="text-muted-foreground text-sm"
+            >or drag one from the charge library, or drop image files on the shield</span
+          >
           <input
             #fileInput
             type="file"
@@ -467,7 +469,9 @@
         <div hlmCardHeader class="flex flex-row items-start justify-between gap-2">
           <div class="flex flex-col gap-1">
             <h2 hlmCardTitle id="charges-title">Charges</h2>
-            <p hlmCardDescription>Beasts, objects and symbols, from your own image files.</p>
+            <p hlmCardDescription>
+              Beasts, objects and symbols, from the charge library or your own image files.
+            </p>
           </div>
           <button
             hlmBtn
@@ -522,6 +526,20 @@
               colours.
             </p>
           }
+        </div>
+      </section>
+
+      <!-- Charge library -->
+      <section hlmCard aria-labelledby="library-title">
+        <div hlmCardHeader>
+          <h2 hlmCardTitle id="library-title">Charge library</h2>
+          <p hlmCardDescription>
+            Drag a charge onto the shield to place it there, or click it to add it in the centre. It
+            takes a tincture that contrasts with what it lands on.
+          </p>
+        </div>
+        <div hlmCardContent>
+          <app-charge-library (add)="addLibraryCharge($event)" />
         </div>
       </section>
     </div>

@@ -1,0 +1,53 @@
+<div class="flex flex-col gap-3">
+  <div class="relative">
+    <ng-icon
+      name="lucideSearch"
+      class="text-muted-foreground pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2"
+      aria-hidden="true"
+    />
+    <input
+      hlmInput
+      type="search"
+      class="charge-search ps-8"
+      placeholder="Find a charge"
+      aria-label="Find a charge"
+      autocomplete="off"
+      [value]="query()"
+      (input)="onQuery($event)"
+    />
+  </div>
+
+  @if (charges().length) {
+    <ul
+      class="grid max-h-96 grid-cols-[repeat(auto-fill,minmax(5rem,1fr))] gap-2 overflow-y-auto p-0.5"
+      aria-label="Charges"
+    >
+      @for (charge of charges(); track charge.file) {
+        <li>
+          <button
+            type="button"
+            draggable="true"
+            class="library-charge hover:bg-muted focus-visible:ring-ring flex w-full cursor-grab flex-col items-center gap-1 rounded-md border p-1.5 text-center text-xs leading-tight outline-none focus-visible:ring-2 active:cursor-grabbing"
+            [attr.data-charge-file]="charge.file"
+            [title]="'Drag ' + charge.name + ' onto the shield, or click to add it in the centre'"
+            (dragstart)="onDragStart($event, charge)"
+            (click)="add.emit(charge)"
+          >
+            <span class="flex h-12 w-full items-center justify-center rounded bg-white p-1">
+              <img
+                [src]="url(charge)"
+                alt=""
+                class="max-h-full max-w-full object-contain"
+                loading="lazy"
+                draggable="false"
+              />
+            </span>
+            {{ charge.name }}
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="text-muted-foreground text-sm">No charge matches “{{ query() }}”.</p>
+  }
+</div>

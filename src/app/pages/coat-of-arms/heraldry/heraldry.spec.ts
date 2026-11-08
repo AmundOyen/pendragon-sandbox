@@ -153,6 +153,16 @@ describe('recolourSvg', () => {
     expect(out.querySelector('circle')!.getAttribute('fill')).toBe('white');
   });
 
+  it('recolours the white body of a charge drawn in black on white', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">' +
+      '<path d="M0 0h5v5z" fill="#FFFFFF"/><path d="M1 1h1v1z" fill="#000000"/></svg>';
+    const out = parse(recolourSvg(svg, resolveTincture(map, 'azure'), map)!);
+    const [body, line] = Array.from(out.querySelectorAll('path'));
+    expect(body.getAttribute('fill')).toBe('#1f4fa8');
+    expect(line.getAttribute('fill')).toBe('#000000');
+  });
+
   it('recolours a black silhouette, including shapes without a fill', () => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0h5v5z"/></svg>';

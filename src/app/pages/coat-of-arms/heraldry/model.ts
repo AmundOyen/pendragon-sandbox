@@ -141,14 +141,20 @@ export function tinctureHints(coat: CoatDraft, map: TinctureMap): TinctureHint[]
   return hints;
 }
 
-/** Initial placement of a new charge: centred on the fess point, about a third of the shield wide. */
+/**
+ * Initial placement of a new charge: about a third of the shield wide, centred on `at` (the
+ * fess point unless the charge was dropped somewhere).
+ */
 export function placeCharge(
   aspect: number,
+  at: Pt = FESS_POINT,
 ): Pick<Charge, 'x' | 'y' | 'width' | 'height' | 'rotation'> {
   const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
   const max = SHIELD.width * 0.38;
   const width = safeAspect >= 1 ? max : max * safeAspect;
-  return { x: FESS_POINT[0], y: FESS_POINT[1], width, height: width / safeAspect, rotation: 0 };
+  const x = Math.round(Math.min(SHIELD.right, Math.max(SHIELD.left, at[0])) * 10) / 10;
+  const y = Math.round(Math.min(SHIELD.bottom, Math.max(SHIELD.top, at[1])) * 10) / 10;
+  return { x, y, width, height: width / safeAspect, rotation: 0 };
 }
 
 export function displayName(coat: Pick<CoatDraft, 'name'>): string {

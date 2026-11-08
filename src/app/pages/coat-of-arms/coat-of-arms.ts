@@ -35,9 +35,16 @@ import { HlmLabel } from '@spartan-ng/helm/label';
 import { CalLocalStorage } from '../../core/storage/local-storage.service';
 import { compare, guid } from '../../core/utilities';
 import { CoatOfArmsService } from './coat-of-arms.service';
+import { ChargeLibrary } from './charge-library/charge-library';
+import {
+  CHARGE_DRAG_TYPE,
+  type LibraryCharge,
+  libraryCharge,
+  libraryChargeUrl,
+} from './charge-library/charge-library.data';
 import { HeraldicShield } from './heraldic-shield/heraldic-shield';
 import { downloadBlob, fileSlug, serializeShield, svgToPng } from './heraldry/export';
-import { shape, toPathData } from './heraldry/geometry';
+import { FESS_POINT, type Pt, shape, toPathData } from './heraldry/geometry';
 import { decorate, LINES, type LineType } from './heraldry/lines';
 import {
   type Charge,
@@ -49,6 +56,7 @@ import {
   newCoat,
   placeCharge,
   type Selection,
+  tinctureAt,
   tinctureHints,
 } from './heraldry/model';
 import {
@@ -61,6 +69,7 @@ import {
 } from './heraldry/ordinaries';
 import { svgDataUrl } from './heraldry/recolour';
 import {
+  contrastingTincture,
   type CustomTincture,
   resolveTincture,
   tinctureMap,
@@ -186,6 +195,7 @@ function chargeName(file: File): string {
     RouterLink,
     HeraldicShield,
     TincturePalette,
+    ChargeLibrary,
   ],
   providers: [
     provideIcons({
@@ -418,9 +428,10 @@ export class CoatOfArmsPage {
   }
 
   protected onDragOver(event: DragEvent): void {
-    if (!event.dataTransfer?.types.includes('Files')) return;
+    const types = event.dataTransfer?.types ?? [];
+    if (!types.includes('Files') && !types.includes(CHARGE_DRAG_TYPE)) return;
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
+    event.dataTransfer!.dropEffect = 'copy';
     this.dropping.set(true);
   }
 
@@ -433,15 +444,41 @@ export class CoatOfArmsPage {
   protected onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dropping.set(false);
-    void this.addFiles(Array.from(event.dataTransfer?.files ?? []));
+    const at = this.editor().clientToShield(event.clientX, event.clientY) ?? undefined;
+    const fromLibrary = libraryCharge(event.dataTransfer?.getData(CHARGE_DRAG_TYPE));
+    if (fromLibrary) {
+      void this.addLibraryCharge(fromLibrary, at);
+    } else {
+      void this.addFiles(Array.from(event.dataTransfer?.files ?? []), at);
+    }
   }
 
-  async addFiles(files: File[]): Promise<void> {
+  /**
+   * Add a charge from the library, centred on `at` (the fess point by default). It takes a
+   * tincture that contrasts with what it lands on, following the rule of tincture.
+   */
+  async addLibraryCharge(item: LibraryCharge, at: Pt = FESS_POINT): Promise<void> {
+    try {
+      const response = await fetch(libraryChargeUrl(item));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const charge = await this.chargeFromSvg(await response.text(), item.name, at);
+      if (!charge) throw new Error('Not an SVG');
+      const under = resolveTincture(this.tinctures(), tinctureAt(this.coat(), at));
+      const placed: Charge = { ...charge, tincture: contrastingTincture(under) };
+      this.coat.update((c) => ({ ...c, charges: [...c.charges, placed] }));
+      this.selection.set({ kind: 'charge', id: placed.id });
+      this.message.set(null);
+    } catch {
+      this.message.set({ kind: 'error', text: `Could not add ${item.name}.` });
+    }
+  }
+
+  async addFiles(files: File[], at?: Pt): Promise<void> {
     const rejected: string[] = [];
     let last: Charge | null = null;
     for (const file of files) {
       try {
-        const charge = await this.readCharge(file);
+        const charge = await this.readCharge(file, at);
         if (!charge) {
           rejected.push(file.name);
           continue;
@@ -463,21 +500,29 @@ export class CoatOfArmsPage {
     );
   }
 
-  private async readCharge(file: File): Promise<Charge | null> {
+  private async readCharge(file: File, at?: Pt): Promise<Charge | null> {
     if (file.size > MAX_FILE_BYTES) return null;
-    const base = { id: guid(), name: chargeName(file), tincture: null };
-    if (isSvgFile(file)) {
-      const svg = await readAsText(file);
-      const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-      const root = doc.documentElement;
-      if (root?.localName !== 'svg' || doc.getElementsByTagName('parsererror').length) return null;
-      const src = svgDataUrl(svg);
-      const aspect = svgAspect(root) ?? (await imageAspect(src));
-      return { ...base, kind: 'svg', src, svg, ...placeCharge(aspect) };
-    }
+    if (isSvgFile(file)) return this.chargeFromSvg(await readAsText(file), chargeName(file), at);
     if (!ACCEPTED_TYPES.includes(file.type)) return null;
     const src = await readAsDataUrl(file);
-    return { ...base, kind: 'raster', src, ...placeCharge(await imageAspect(src)) };
+    return {
+      id: guid(),
+      name: chargeName(file),
+      tincture: null,
+      kind: 'raster',
+      src,
+      ...placeCharge(await imageAspect(src), at),
+    };
+  }
+
+  /** An SVG charge from its markup, or null when the markup is not SVG. */
+  private async chargeFromSvg(svg: string, name: string, at?: Pt): Promise<Charge | null> {
+    const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+    const root = doc.documentElement;
+    if (root?.localName !== 'svg' || doc.getElementsByTagName('parsererror').length) return null;
+    const src = svgDataUrl(svg);
+    const aspect = svgAspect(root) ?? (await imageAspect(src));
+    return { id: guid(), name, tincture: null, kind: 'svg', src, svg, ...placeCharge(aspect, at) };
   }
 
   protected updateCharge(charge: Charge): void {
